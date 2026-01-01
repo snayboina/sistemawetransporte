@@ -101,11 +101,11 @@ export const useOfflineSync = () => {
             localStorage.removeItem(STORAGE_KEY);
             setPendingCount(0);
             toast({ title: 'Sincronização concluída!', description: 'Todos os dados foram enviados.' });
-        } catch (err) {
+        } catch (err: any) {
             console.error('Sync failed:', err);
             toast({
                 title: 'Falha na sincronização',
-                description: 'Tentaremos novamente em breve.',
+                description: err?.message || 'Erro desconhecido ao enviar dados.',
                 variant: 'destructive'
             });
         }
