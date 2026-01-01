@@ -16,9 +16,17 @@ const QRScanner = () => {
     const saved = localStorage.getItem('swiftride_auto_send');
     return saved === null ? true : saved === 'true';
   });
+  const autoSendRef = useRef(autoSend);
+  const isProcessingRef = useRef(false); // Trava para evitar scans duplicados
   const [previewData, setPreviewData] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const qrCodeRef = useRef<Html5Qrcode | null>(null);
+
+  // Sincroniza o Ref com o State
+  useEffect(() => {
+    autoSendRef.current = autoSend;
+    localStorage.setItem('swiftride_auto_send', String(autoSend));
+  }, [autoSend]);
 
   // Função para tocar o som de "pip" (Beep)
   const playBeep = () => {
@@ -43,13 +51,9 @@ const QRScanner = () => {
     }
   };
 
-  useEffect(() => {
-    localStorage.setItem('swiftride_auto_send', String(autoSend));
-  }, [autoSend]);
+  // Efeito removido pois foi mesclado acima no useEffect do autoSend
 
   useEffect(() => {
-    qrCodeRef.current = new Html5Qrcode("reader");
-
     return () => {
       if (qrCodeRef.current && qrCodeRef.current.isScanning) {
         qrCodeRef.current.stop().catch(err => console.error("Erro ao parar scanner", err));
@@ -58,12 +62,35 @@ const QRScanner = () => {
   }, []);
 
   const startScanner = async () => {
-    if (!qrCodeRef.current) return;
-
     try {
-      setIsScanning(true);
-      setHasPermission(true);
       setPreviewData(null);
+      console.log("Solicitando startScanner...");
+
+      // Se já está escaneando, não faz nada
+      if (qrCodeRef.current?.isScanning) {
+        console.log("Já existe uma sessão de scan ativa.");
+        return;
+      }
+
+      // Garante que o elemento existe
+      const element = document.getElementById("reader");
+      if (!element) {
+        console.warn("Elemento 'reader' não encontrado no DOM. Aguardando...");
+        setTimeout(startScanner, 300);
+        return;
+      }
+
+      // Cria a instância se não existir, mas NÃO a apaga no stop
+      if (!qrCodeRef.current) {
+        qrCodeRef.current = new Html5Qrcode("reader");
+        console.log("Nova instância Html5Qrcode persistente criada.");
+      }
+
+      setHasPermission(true);
+      isProcessingRef.current = false; // Reseta a trava ao iniciar novo scan
+
+      // Delay de segurança maior para permitir liberação de hardware
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const width = window.innerWidth;
       const qrboxSize = Math.max(250, Math.floor(width * 0.7));
@@ -71,38 +98,55 @@ const QRScanner = () => {
       await qrCodeRef.current.start(
         { facingMode: "environment" },
         {
-          fps: 20,
+          fps: 15, // Reduzido para maior estabilidade em dispositivos lentos
           qrbox: { width: qrboxSize, height: qrboxSize },
           aspectRatio: 1.0,
         },
         onScanSuccess,
         onScanFailure
       );
+
+      setIsScanning(true);
+      console.log("Scanner iniciado com sucesso.");
     } catch (error: any) {
-      console.error("Erro ao iniciar câmera:", error);
+      console.error("Erro fatal ao iniciar câmera:", error);
       setIsScanning(false);
+
       const errorStr = String(error);
       if (errorStr.includes("NotAllowedError") || errorStr.includes("Permission denied")) {
         setHasPermission(false);
         toast.error("Permissão de câmera negada.");
       } else {
-        toast.error("Erro ao acessar a câmera.");
+        // Se falhou por 'Already scanning', tenta resetar o estado interno
+        if (errorStr.includes("Already scanning")) {
+          console.log("Detectado conflito 'Already scanning'. Tentando recuperar...");
+          setIsScanning(true);
+        } else {
+          toast.error("Conexão com a câmera falhou. Tente novamente.");
+        }
       }
     }
   };
 
   const stopScanner = async () => {
-    if (qrCodeRef.current && qrCodeRef.current.isScanning) {
+    console.log("Chamando stopScanner...");
+    if (qrCodeRef.current) {
       try {
-        await qrCodeRef.current.stop();
-        setIsScanning(false);
+        if (qrCodeRef.current.isScanning) {
+          await qrCodeRef.current.stop();
+          console.log("Scanner parado com sucesso.");
+        }
       } catch (err) {
-        console.error("Erro ao parar câmera", err);
+        console.warn("Aviso ao parar câmera (pode já estar parada):", err);
       }
+      setIsScanning(false);
     }
   };
 
   async function onScanSuccess(decodedText: string) {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true; // Ativa a trava imediatamente
+
     console.log(`Scan result: ${decodedText}`);
     playBeep();
 
@@ -110,23 +154,26 @@ const QRScanner = () => {
     try {
       qrData = JSON.parse(decodedText);
     } catch (e) {
-      await stopScanner();
       console.error("QR Code não contém um JSON válido", e);
       toast.error("Formato de QR Code incompatível.");
-      startScanner();
+      isProcessingRef.current = false; // Libera a trava se falhar o parse
       return;
     }
 
-    if (autoSend) {
+    const isDirectMode = autoSendRef.current; // Captura o modo no momento do scan
+
+    if (isDirectMode) {
       await stopScanner();
-      await processAndSave(qrData);
+      await processAndSave(qrData, true);
     } else {
       await stopScanner();
       setPreviewData(qrData);
+      // Mantém isProcessingRef.current como true para evitar scans de fundo 
+      // enquanto o preview está na tela.
     }
   }
 
-  async function processAndSave(qrData: any) {
+  async function processAndSave(qrData: any, isDirect: boolean = false) {
     setIsSaving(true);
     toast.loading("Processando leitura...", { id: 'saving-scan' });
 
@@ -156,15 +203,33 @@ const QRScanner = () => {
       });
 
       toast.success("Código lido e sincronizado!", { id: 'saving-scan' });
+      setIsSaving(false);
+      isProcessingRef.current = false; // Libera a trava após sucesso
 
-      setTimeout(() => {
-        navigate('/');
-      }, 800);
+      if (isDirect) {
+        // No modo direto, apenas reinicia o scanner para a próxima leitura sem sair da tela
+        console.log("Fluxo Direto concluído. Reiniciando...");
+        setTimeout(() => {
+          startScanner();
+        }, 100);
+      } else {
+        // No modo manual, volta para a home após confirmar
+        console.log("Fluxo Confirmar concluído. Navegando para a Home...");
+        setTimeout(() => {
+          navigate('/');
+        }, 500);
+      }
 
     } catch (error) {
       console.error("Erro ao processar scan:", error);
       toast.error("Erro ao salvar leitura.", { id: 'saving-scan' });
       setIsSaving(false);
+      isProcessingRef.current = false; // Libera a trava em caso de erro
+
+      // Se deu erro, volta para o scanner para tentar novamente
+      setTimeout(() => {
+        startScanner();
+      }, 500);
     }
   }
 
@@ -200,74 +265,76 @@ const QRScanner = () => {
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center relative px-4 pb-20">
-          {!previewData ? (
-            <>
-              <div className="text-center mb-8">
-                <h2 className="text-white text-2xl font-bold mb-2">
-                  Scanner de QR Code
-                </h2>
-                <p className="text-gray-400 text-sm">
-                  {autoSend ? "Escanear e enviar agora" : "Escaneie para conferir os dados"}
-                </p>
-              </div>
+          {/* Scanner Area - Persistente no DOM */}
+          <div className={`w-full max-w-[340px] flex flex-col items-center transition-all duration-300 ${previewData ? 'opacity-0 scale-95 pointer-events-none absolute invisible' : 'opacity-100 scale-100 relative visible'}`}>
+            <div className="text-center mb-8">
+              <h2 className="text-white text-2xl font-bold mb-2">
+                Scanner de QR Code
+              </h2>
+              <p className="text-gray-400 text-sm">
+                {autoSend ? "Escanear e enviar agora" : "Escaneie para conferir os dados"}
+              </p>
+            </div>
 
-              <div className="relative w-full max-w-[340px] aspect-square bg-gray-900 rounded-3xl border-2 border-primary/30 overflow-hidden shadow-2xl">
-                <div id="reader" className="w-full h-full" />
+            <div className="relative w-full aspect-square bg-gray-900 rounded-3xl border-2 border-primary/30 overflow-hidden shadow-2xl">
+              <div id="reader" className="w-full h-full" />
 
-                {!isScanning && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-950/90 z-30 p-8 text-center">
-                    {hasPermission === false ? (
-                      <>
-                        <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4 border border-red-500/30">
-                          <Icon name="block" size={32} className="text-red-500" />
-                        </div>
-                        <p className="text-white font-medium mb-2">Acesso à câmera negado</p>
-                        <button
-                          onClick={() => window.location.reload()}
-                          className="w-full py-4 bg-white/10 text-white rounded-xl font-bold border border-white/20"
-                        >
-                          Recarregar Página
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-6 border border-primary/30 animate-pulse">
-                          <Icon name="photo_camera" size={40} className="text-primary" />
-                        </div>
-                        <p className="text-white font-bold text-lg mb-8">Scanner Pronto</p>
-                        <button
-                          onClick={startScanner}
-                          className="w-full py-5 bg-primary text-primary-foreground rounded-2xl font-black text-lg shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all text-black"
-                        >
-                          INICIAR LEITURA
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {isScanning && (
-                  <div className="absolute inset-0 pointer-events-none z-20">
-                    <div className="absolute left-4 right-4 h-[2px] bg-primary shadow-[0_0_20px_#FCD535] animate-scan-vertical z-30" />
-                    <div className="absolute top-6 left-6 w-12 h-12 border-l-[6px] border-t-[6px] border-primary rounded-tl-lg shadow-[-2px_-2px_10px_rgba(252,213,53,0.4)]" />
-                    <div className="absolute top-6 right-6 w-12 h-12 border-r-[6px] border-t-[6px] border-primary rounded-tr-lg shadow-[2px_-2px_10px_rgba(252,213,53,0.4)]" />
-                    <div className="absolute bottom-6 left-6 w-12 h-12 border-l-[6px] border-b-[6px] border-primary rounded-bl-lg shadow-[-2px_2px_10px_rgba(252,213,53,0.4)]" />
-                    <div className="absolute bottom-6 right-6 w-12 h-12 border-r-[6px] border-b-[6px] border-primary rounded-br-lg shadow-[2px_2px_10px_rgba(252,213,53,0.4)]" />
-                    <div className="absolute inset-0 border-[40px] border-black/40" />
-                  </div>
-                )}
-              </div>
+              {!isScanning && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-950/90 z-30 p-8 text-center">
+                  {hasPermission === false ? (
+                    <>
+                      <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4 border border-red-500/30">
+                        <Icon name="block" size={32} className="text-red-500" />
+                      </div>
+                      <p className="text-white font-medium mb-2">Acesso à câmera negado</p>
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="w-full py-4 bg-white/10 text-white rounded-xl font-bold border border-white/20"
+                      >
+                        Recarregar Página
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-6 border border-primary/30 animate-pulse">
+                        <Icon name="photo_camera" size={40} className="text-primary" />
+                      </div>
+                      <p className="text-white font-bold text-lg mb-8">Scanner Pronto</p>
+                      <button
+                        onClick={startScanner}
+                        className="w-full py-5 bg-primary text-primary-foreground rounded-2xl font-black text-lg shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all text-black"
+                      >
+                        INICIAR LEITURA
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
 
               {isScanning && (
-                <button
-                  onClick={stopScanner}
-                  className="mt-10 px-8 py-3 bg-red-500/20 text-red-500 rounded-full border border-red-500/40 text-sm font-bold"
-                >
-                  CANCELAR
-                </button>
+                <div className="absolute inset-0 pointer-events-none z-20">
+                  <div className="absolute left-4 right-4 h-[2px] bg-primary shadow-[0_0_20px_#FCD535] animate-scan-vertical z-30" />
+                  <div className="absolute top-6 left-6 w-12 h-12 border-l-[6px] border-t-[6px] border-primary rounded-tl-lg shadow-[-2px_-2px_10px_rgba(252,213,53,0.4)]" />
+                  <div className="absolute top-6 right-6 w-12 h-12 border-r-[6px] border-t-[6px] border-primary rounded-tr-lg shadow-[2px_-2px_10px_rgba(252,213,53,0.4)]" />
+                  <div className="absolute bottom-6 left-6 w-12 h-12 border-l-[6px] border-b-[6px] border-primary rounded-bl-lg shadow-[-2px_2px_10px_rgba(252,213,53,0.4)]" />
+                  <div className="absolute bottom-6 right-6 w-12 h-12 border-r-[6px] border-b-[6px] border-primary rounded-br-lg shadow-[2px_2px_10px_rgba(252,213,53,0.4)]" />
+                  <div className="absolute inset-0 border-[40px] border-black/40" />
+                </div>
               )}
-            </>
-          ) : (
+            </div>
+
+            {isScanning && (
+              <button
+                onClick={stopScanner}
+                className="mt-10 px-8 py-3 bg-red-500/20 text-red-500 rounded-full border border-red-500/40 text-sm font-bold"
+              >
+                CANCELAR
+              </button>
+            )}
+          </div>
+
+          {/* Preview Area - Only shown when previewData exists */}
+          {previewData && (
             <div className="w-full max-w-[340px] animate-scale-in bg-gray-900 rounded-3xl border border-white/10 p-6 shadow-2xl">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/30">
@@ -316,7 +383,11 @@ const QRScanner = () => {
                   )}
                 </button>
                 <button
-                  onClick={() => { setPreviewData(null); startScanner(); }}
+                  onClick={() => {
+                    isProcessingRef.current = false;
+                    setPreviewData(null);
+                    startScanner();
+                  }}
                   disabled={isSaving}
                   className="w-full py-4 text-white font-bold opacity-60 hover:opacity-100 transition-all text-sm"
                 >

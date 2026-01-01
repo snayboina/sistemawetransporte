@@ -6,19 +6,25 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const ReadingsHistory = () => {
-    const { getDailyReadings, isOnline } = useOfflineSync();
+    const { getDailyReadings, isOnline, syncData } = useOfflineSync();
     const [readings, setReadings] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    const loadReadings = async () => {
+        setIsLoading(true);
+        const data = await getDailyReadings();
+        setReadings(data);
+        setIsLoading(false);
+    };
+
     useEffect(() => {
-        const loadReadings = async () => {
-            setIsLoading(true);
-            const data = await getDailyReadings();
-            setReadings(data);
-            setIsLoading(false);
-        };
         loadReadings();
     }, []);
+
+    const handleSync = async () => {
+        await syncData();
+        loadReadings();
+    };
 
     return (
         <div className="min-h-screen bg-black flex flex-col text-white">
@@ -27,7 +33,17 @@ const ReadingsHistory = () => {
                     <Icon name="arrow_back" size={24} />
                 </Link>
                 <h1 className="text-xl font-bold">Leituras de Hoje</h1>
-                <div className="w-10" />
+                {isOnline && readings.some(r => r.status === 'pending') ? (
+                    <button
+                        onClick={handleSync}
+                        className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center animate-pulse"
+                        title="Sincronizar agora"
+                    >
+                        <Icon name="sync" size={20} />
+                    </button>
+                ) : (
+                    <div className="w-10" />
+                )}
             </div>
 
             <div className="flex-1 p-4">
@@ -62,9 +78,15 @@ const ReadingsHistory = () => {
                                         <p className="text-xs font-bold text-gray-400">
                                             {format(new Date(reg.read_at), "HH:mm", { locale: ptBR })}
                                         </p>
-                                        <span className="text-[9px] uppercase px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30">
-                                            Sincronizado
-                                        </span>
+                                        {reg.status === 'synced' ? (
+                                            <span className="text-[9px] uppercase px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30">
+                                                Sincronizado
+                                            </span>
+                                        ) : (
+                                            <span className="text-[9px] uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30 animate-pulse">
+                                                Pendente
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
 

@@ -115,6 +115,7 @@ export const useOfflineSync = () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        let remoteReadings: PendingReading[] = [];
         try {
             const { data, error } = await supabase
                 .from('sync_readings')
@@ -123,11 +124,26 @@ export const useOfflineSync = () => {
                 .order('read_at', { ascending: false });
 
             if (error) throw error;
-            return data;
+            remoteReadings = data || [];
         } catch (err) {
             console.error('Error fetching today\'s readings:', err);
-            return [];
         }
+
+        // Recuperar leituras locais pendentes
+        const stored = localStorage.getItem(STORAGE_KEY);
+        const localReadings: PendingReading[] = stored ? JSON.parse(stored) : [];
+
+        // Filtrar apenas o que é de hoje (opcional, mas bom por segurança)
+        const todayStr = today.toISOString().split('T')[0];
+        const pendingToday = localReadings.filter(r => r.read_at.startsWith(todayStr));
+
+        // Mesclar e ordenar por data decrescente
+        const allReadings = [
+            ...pendingToday.map(r => ({ ...r, status: 'pending' })),
+            ...remoteReadings.map(r => ({ ...r, status: 'synced' }))
+        ].sort((a, b) => new Date(b.read_at).getTime() - new Date(a.read_at).getTime());
+
+        return allReadings;
     };
 
     return { isOnline, pendingCount, saveReading, syncData, getDailyReadings };
