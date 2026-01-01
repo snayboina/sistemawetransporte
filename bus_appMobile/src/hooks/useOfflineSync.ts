@@ -12,6 +12,8 @@ interface PendingReading {
     location: string;
     reading_location: string;
     read_at: string;
+    has_divergence?: boolean;
+    real_driver_name?: string | null;
 }
 
 const STORAGE_KEY = 'swiftride_pending_readings';

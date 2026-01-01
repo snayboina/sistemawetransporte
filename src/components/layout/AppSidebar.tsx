@@ -1,4 +1,4 @@
-import { Bus, LayoutDashboard, QrCode, RefreshCw, LogOut } from 'lucide-react';
+import { Bus, LayoutDashboard, QrCode, RefreshCw, LogOut, AlertCircle } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import {
   Sidebar,
@@ -17,6 +17,7 @@ const menuItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Cadastro', url: '/cadastro', icon: QrCode },
   { title: 'Sincronização', url: '/sincronizacao', icon: RefreshCw },
+  { title: 'Divergências', url: '/divergencias', icon: AlertCircle },
 ];
 
 export function AppSidebar() {

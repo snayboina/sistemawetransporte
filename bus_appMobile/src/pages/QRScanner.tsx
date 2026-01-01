@@ -204,12 +204,19 @@ const QRScanner = () => {
         route_name: registration?.routes?.name || qrData.route || qrData.routeName || 'N/A',
         location: registration?.location || qrData.location || '0,0',
         reading_location: 'Local Atual',
-        read_at: new Date().toISOString()
+        read_at: new Date().toISOString(),
+        has_divergence: isDivergent,
+        real_driver_name: isDivergent ? qrData.manualDriverName : null
       });
 
       toast.success("Código lido e sincronizado!", { id: 'saving-scan' });
       setIsSaving(false);
       isProcessingRef.current = false; // Libera a trava após sucesso
+
+      // Limpa os estados para o próximo scan
+      setIsDivergent(false);
+      setManualId('');
+      setManualDriver('');
 
       if (isDirect) {
         // No modo direto, apenas reinicia o scanner para a próxima leitura sem sair da tela
@@ -620,6 +627,29 @@ const QRScanner = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Checkbox de Divergência */}
+                {previewData.driver && previewData.manualDriverName && previewData.driver !== previewData.manualDriverName && (
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5 mb-6">
+                    <div className="flex items-start gap-4">
+                      <input
+                        type="checkbox"
+                        id="divergent-checkbox"
+                        checked={isDivergent}
+                        onChange={(e) => setIsDivergent(e.target.checked)}
+                        className="w-6 h-6 mt-1 accent-amber-500 cursor-pointer"
+                      />
+                      <label htmlFor="divergent-checkbox" className="flex-1 cursor-pointer">
+                        <p className="text-amber-400 font-black text-sm uppercase tracking-wider mb-1">
+                          ⚠️ Motorista Diferente
+                        </p>
+                        <p className="text-gray-300 text-xs leading-relaxed">
+                          O motorista no banco é <span className="font-bold text-white">{previewData.driver}</span>, mas você digitou <span className="font-bold text-amber-400">{previewData.manualDriverName}</span>. Marque esta opção para registrar a divergência.
+                        </p>
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col gap-3">
@@ -641,6 +671,9 @@ const QRScanner = () => {
                   onClick={() => {
                     isProcessingRef.current = false;
                     setPreviewData(null);
+                    setIsDivergent(false);
+                    setManualId('');
+                    setManualDriver('');
                     startScanner();
                   }}
                   disabled={isSaving}
