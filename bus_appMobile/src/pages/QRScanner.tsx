@@ -4,48 +4,73 @@ import scannerBg from '@/assets/scanner-background.jpg';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { toast } from 'sonner';
 
 const QRScanner = () => {
   const navigate = useNavigate();
   const { isOnline, pendingCount, saveReading } = useOfflineSync();
-  const [isScanning, setIsScanning] = useState(true);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const qrCodeRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
-    // Initialize the scanner
-    const scanner = new Html5QrcodeScanner(
-      "reader",
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        rememberLastUsedCamera: true,
-        supportedScanTypes: [0], // 0: CAMERA
-        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
-      },
-      /* verbose= */ false
-    );
-
-    scanner.render(onScanSuccess, onScanFailure);
-    scannerRef.current = scanner;
+    // Criar a instância mas não iniciar automaticamente
+    qrCodeRef.current = new Html5Qrcode("reader");
 
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(err => console.error("Falha ao limpar scanner", err));
+      if (qrCodeRef.current && qrCodeRef.current.isScanning) {
+        qrCodeRef.current.stop().catch(err => console.error("Erro ao parar scanner", err));
       }
     };
   }, []);
 
+  const startScanner = async () => {
+    if (!qrCodeRef.current) return;
+
+    try {
+      setIsScanning(true);
+      setHasPermission(true);
+
+      await qrCodeRef.current.start(
+        { facingMode: "environment" }, // Forçar câmera traseira
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+        },
+        onScanSuccess,
+        onScanFailure
+      );
+    } catch (error: any) {
+      console.error("Erro ao iniciar câmera:", error);
+      setIsScanning(false);
+      const errorStr = String(error);
+      if (errorStr.includes("NotAllowedError") || errorStr.includes("Permission denied")) {
+        setHasPermission(false);
+        toast.error("Permissão de câmera negada. Verifique as configurações do navegador.");
+      } else {
+        toast.error("Erro ao acessar a câmera. Tente recarregar a página.");
+      }
+    }
+  };
+
+  const stopScanner = async () => {
+    if (qrCodeRef.current && qrCodeRef.current.isScanning) {
+      try {
+        await qrCodeRef.current.stop();
+        setIsScanning(false);
+      } catch (err) {
+        console.error("Erro ao parar câmera", err);
+      }
+    }
+  };
+
   async function onScanSuccess(decodedText: string) {
     console.log(`Scan result: ${decodedText}`);
 
-    // Stop scanning to prevent multiple triggers
-    if (scannerRef.current) {
-      scannerRef.current.pause(true);
-    }
+    // Parar o scanner imediatamente
+    await stopScanner();
 
-    setIsScanning(false);
     toast.success("Código lido com sucesso!");
 
     try {
@@ -55,8 +80,7 @@ const QRScanner = () => {
       } catch (e) {
         console.error("QR Code não contém um JSON válido", e);
         toast.error("QR Code inválido (formato incompatível)");
-        if (scannerRef.current) scannerRef.current.resume();
-        setIsScanning(true);
+        startScanner(); // Reiniciar se falhar o parse
         return;
       }
 
@@ -66,7 +90,7 @@ const QRScanner = () => {
         const { data, error } = await supabase
           .from('registrations')
           .select('*, drivers(name), buses(bus_number, plate), routes(name)')
-          .eq('id', qrData.id || qrData.registrationId) // Tentar os dois nomes comuns
+          .eq('id', qrData.id || qrData.registrationId)
           .single();
 
         if (!error && data) {
@@ -82,109 +106,122 @@ const QRScanner = () => {
         bus_plate: registration?.buses?.plate || qrData.plate || qrData.busPlate || 'N/A',
         route_name: registration?.routes?.name || qrData.route || qrData.routeName || 'N/A',
         location: registration?.location || qrData.location || '0,0',
-        reading_location: 'Local Atual', // Poderia usar GPS aqui se solicitado
+        reading_location: 'Local Atual',
         read_at: new Date().toISOString()
       });
 
       toast.success("Leitura registrada!");
 
-      // Navigate to details or home after a short delay
       setTimeout(() => {
         navigate('/');
-      }, 1500);
+      }, 1000);
 
     } catch (error) {
       console.error("Erro ao processar scan:", error);
       toast.error("Erro ao salvar a leitura");
-      if (scannerRef.current) scannerRef.current.resume();
-      setIsScanning(true);
+      startScanner(); // Reiniciar em caso de erro no processo
     }
   }
 
   function onScanFailure(error: any) {
-    // Silence errors to avoid console flood, unless critical
-    // console.warn(`QR scan error: ${error}`);
+    // Ignorar erros de frames ruins
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col overflow-hidden relative">
-      {/* Background Layer */}
-      <div className="absolute inset-0 z-0">
-        <div id="reader-bg" className="w-full h-full bg-black" />
-        <div className="absolute inset-0 scanner-backdrop" />
-      </div>
-
-      {/* UI Interface */}
-      <div className="relative z-10 flex flex-col h-full w-full max-w-md mx-auto min-h-screen">
-        {/* Header */}
+    <div className="min-h-screen bg-black flex flex-col overflow-hidden relative">
+      {/* Header UI */}
+      <div className="relative z-20 flex flex-col h-full w-full max-w-md mx-auto min-h-screen">
         <div className="flex items-center justify-between p-5 pt-8">
           <Link
             to="/"
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-background/40 text-foreground backdrop-blur-md hover:bg-foreground/20 transition-colors duration-200"
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 text-white backdrop-blur-md"
           >
             <Icon name="close" size={24} />
           </Link>
 
           <div className="flex items-center gap-3">
-            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full backdrop-blur-sm border ${isOnline ? 'bg-success/20 border-success/30 text-success' : 'bg-destructive/20 border-destructive/30 text-destructive'}`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-success animate-pulse' : 'bg-destructive'}`} />
-              <span className="text-[10px] font-bold uppercase tracking-wider">{isOnline ? 'Online' : 'Offline'}</span>
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full backdrop-blur-sm border ${isOnline ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-red-500/20 border-red-500/30 text-red-400'}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+              <span className="text-[10px] font-bold uppercase">{isOnline ? 'Online' : 'Offline'}</span>
             </div>
+          </div>
+        </div>
 
-            {pendingCount > 0 && (
-              <div className="px-3 py-1 bg-primary/20 rounded-full backdrop-blur-sm border border-primary/30 text-primary">
-                <span className="text-[10px] font-bold uppercase tracking-wider">{pendingCount} Pendente(s)</span>
+        {/* Scanner Viewport */}
+        <div className="flex-1 flex flex-col items-center justify-center relative px-6">
+          <div className="text-center mb-8">
+            <h2 className="text-white text-2xl font-bold mb-2">
+              Scanner de QR Code
+            </h2>
+            <p className="text-gray-400 text-sm">
+              Aponte para o código colado no ônibus
+            </p>
+          </div>
+
+          <div className="relative w-full aspect-square max-w-[320px] bg-gray-900 rounded-3xl border-2 border-primary/20 overflow-hidden shadow-2xl">
+            <div id="reader" className="w-full h-full" />
+
+            {!isScanning && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-950/80 z-30 p-8 text-center">
+                {hasPermission === false ? (
+                  <>
+                    <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4">
+                      <Icon name="block" size={32} className="text-red-500" />
+                    </div>
+                    <p className="text-white font-medium mb-4">Acesso à câmera negado</p>
+                    <p className="text-gray-400 text-sm mb-6">Por favor, habilite a permissão nas configurações do seu navegador.</p>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="w-full py-4 bg-white/10 text-white rounded-xl font-bold border border-white/20"
+                    >
+                      Recarregar Página
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+                      <Icon name="photo_camera" size={32} className="text-primary" />
+                    </div>
+                    <p className="text-white font-medium mb-6">Pronto para iniciar a leitura</p>
+                    <button
+                      onClick={startScanner}
+                      className="w-full py-4 bg-primary text-primary-foreground rounded-xl font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
+                    >
+                      Ativar Câmera
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {isScanning && (
+              <div className="absolute inset-0 pointer-events-none z-20">
+                <div className="absolute left-6 right-6 h-0.5 bg-primary shadow-[0_0_15px_rgba(252,213,53,0.5)] animate-scan-vertical" />
+                <div className="absolute top-4 left-4 w-10 h-10 border-l-4 border-t-4 border-primary rounded-tl-lg" />
+                <div className="absolute top-4 right-4 w-10 h-10 border-r-4 border-t-4 border-primary rounded-tr-lg" />
+                <div className="absolute bottom-4 left-4 w-10 h-10 border-l-4 border-b-4 border-primary rounded-bl-lg" />
+                <div className="absolute bottom-4 right-4 w-10 h-10 border-r-4 border-b-4 border-primary rounded-br-lg" />
               </div>
             )}
           </div>
 
-          <button className="flex items-center justify-center w-10 h-10 rounded-full bg-background/40 text-primary backdrop-blur-md hover:bg-primary/20 transition-colors duration-200 neon-border border border-primary/20">
-            <Icon name="flash_on" size={24} filled />
-          </button>
-        </div>
-
-        {/* Scanner Container */}
-        <div className="flex-1 flex flex-col items-center justify-center relative -mt-16">
-          <h2 className="text-foreground text-2xl font-bold tracking-tight mb-8 text-shadow-dark text-center px-6">
-            {!isScanning ? 'Processando leitura...' : 'Centralize o QR Code'}
-          </h2>
-
-          {/* This is where html5-qrcode will render */}
-          <div className="relative w-[320px] h-[320px] bg-black overflow-hidden rounded-3xl border-2 border-primary/20 shadow-2xl shadow-primary/10">
-            <div id="reader" className="w-full h-full" />
-
-            {/* Aesthetic Overlays */}
-            <div className="absolute inset-0 pointer-events-none z-20">
-              {/* Scanning Laser Line (only when scanning) */}
-              {isScanning && (
-                <div className="absolute left-6 right-6 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_15px_hsl(var(--primary))] animate-scan-vertical" />
-              )}
-
-              {/* Corner Brackets */}
-              <div className="absolute top-4 left-4 w-10 h-10 border-l-[3px] border-t-[3px] border-primary rounded-tl-lg" />
-              <div className="absolute top-4 right-4 w-10 h-10 border-r-[3px] border-t-[3px] border-primary rounded-tr-lg" />
-              <div className="absolute bottom-4 left-4 w-10 h-10 border-l-[3px] border-b-[3px] border-primary rounded-bl-lg" />
-              <div className="absolute bottom-4 right-4 w-10 h-10 border-r-[3px] border-b-[3px] border-primary rounded-br-lg" />
-            </div>
-          </div>
-
-          <div className="mt-8 px-4 py-2 bg-background/40 backdrop-blur-md rounded-full border border-border/30">
-            <p className="text-muted-foreground text-sm font-medium leading-normal text-center">
-              Aponte a câmera para os dados do ônibus
-            </p>
-          </div>
-        </div>
-
-        {/* Bottom Actions */}
-        <div className="p-6 pb-10 w-full bg-gradient-to-t from-background/80 to-transparent">
-          <div className="flex items-center justify-center">
-            <Link
-              to="/"
-              className="px-8 py-3 bg-surface/80 border border-primary/30 rounded-full text-foreground/80 font-medium backdrop-blur-md hover:bg-primary/20 hover:text-primary transition-all duration-300"
+          {isScanning && (
+            <button
+              onClick={stopScanner}
+              className="mt-8 px-6 py-2 bg-white/10 text-white rounded-full border border-white/20 text-sm font-medium"
             >
-              Voltar ao Início
-            </Link>
-          </div>
+              Parar Scanner
+            </button>
+          )}
+        </div>
+
+        {/* Bottom Stats */}
+        <div className="p-10 text-center">
+          {pendingCount > 0 && (
+            <p className="text-xs text-gray-400">
+              Você tem <span className="text-primary font-bold">{pendingCount}</span> leitura(s) aguardando sincronização.
+            </p>
+          )}
         </div>
       </div>
     </div>
