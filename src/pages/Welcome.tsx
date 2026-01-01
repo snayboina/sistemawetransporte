@@ -85,28 +85,35 @@ export default function Welcome() {
               </div>
             </div>
 
-            {/* Right Column - Image with Glow */}
-            <div className="relative order-1 md:order-2 animate-in fade-in zoom-in duration-1000 delay-200">
-              <div className="absolute -inset-4 bg-gradient-to-tr from-[#FCD535]/20 to-blue-500/20 blur-2xl rounded-3xl opacity-50 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative rounded-[2.5rem] overflow-hidden border border-white/10 shadow-3xl bg-[#1a1f2e]">
-                <img
-                  src="/hero-image.png"
-                  alt="SwiftRide Dashboard"
-                  className="w-full h-auto transform hover:scale-105 transition-transform duration-700"
-                />
-                {/* Visual Accent */}
-                <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[#1a1f2e] to-transparent pointer-events-none"></div>
+            {/* Right Column - Image with Glow and 3D Perspective */}
+            <div className="relative order-1 md:order-2 animate-in fade-in zoom-in duration-1000 delay-200 perspective-[2000px] flex justify-center py-10 md:py-20">
+              <div className="absolute -inset-20 bg-gradient-to-tr from-[#FCD535]/20 to-blue-500/10 blur-[120px] rounded-full opacity-40"></div>
+
+              <div className="relative transform-gpu transition-all duration-1000 hover:scale-105"
+                style={{ transform: 'rotateX(25deg) rotateY(-10deg) rotateZ(-5deg)' }}>
+                <div className="relative rounded-[3rem] overflow-hidden border border-white/20 shadow-[0_80px_150px_-30px_rgba(0,0,0,0.8)] bg-[#1a1f2e]">
+                  <img
+                    src="https://res.cloudinary.com/duyb5dsw0/image/upload/v1767289139/Gemini_Generated_Image_zaf06jzaf06jzaf0_pjyox1.png"
+                    alt="SwiftRide Premium View"
+                    className="w-full h-auto min-w-[600px] md:min-w-[900px] max-w-none transform scale-110"
+                  />
+                  {/* Subtle overlay for depth */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40 pointer-events-none"></div>
+                </div>
+
+                {/* Visual shadow on the 'floor' */}
+                <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[110%] h-32 bg-black/70 blur-[70px] -z-10 rounded-full"></div>
               </div>
 
               {/* Floating Stat Card */}
-              <div className="absolute -bottom-6 -left-6 bg-[#252b3b]/90 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl hidden lg:block animate-bounce-slow">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-[#FCD535] rounded-full flex items-center justify-center text-black font-bold">
+              <div className="absolute -bottom-10 left-0 bg-[#252b3b]/95 backdrop-blur-2xl p-6 rounded-[2rem] border border-white/10 shadow-3xl hidden lg:block animate-bounce-slow z-30">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-[#FCD535] rounded-full flex items-center justify-center text-black font-black text-xl shadow-[0_0_20px_rgba(252,213,53,0.4)]">
                     99%
                   </div>
                   <div>
-                    <div className="text-white font-bold">uptime</div>
-                    <div className="text-xs text-gray-400">Sistema estabilizado</div>
+                    <div className="text-white font-extrabold text-lg">uptime</div>
+                    <div className="text-sm text-gray-400 font-medium">Operação 24/7 Ativa</div>
                   </div>
                 </div>
               </div>
