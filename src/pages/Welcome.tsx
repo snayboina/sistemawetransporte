@@ -1,8 +1,23 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bus, Users, BarChart3, Shield, ArrowRight } from 'lucide-react';
 
 export default function Welcome() {
   const navigate = useNavigate();
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  const slides = [
+    "https://res.cloudinary.com/duyb5dsw0/image/upload/v1767237854/Gemini_Generated_Image_3kt7qt3kt7qt3kt7_msjgde.png",
+    "https://res.cloudinary.com/duyb5dsw0/image/upload/v1767231739/Captura_de_tela_2025-12-31_214027_oufs7j.png",
+    "https://res.cloudinary.com/duyb5dsw0/image/upload/v1767289139/Gemini_Generated_Image_zaf06jzaf06jzaf0_pjyox1.png"
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#1a1f2e]">
@@ -85,28 +100,49 @@ export default function Welcome() {
               </div>
             </div>
 
-            {/* Right Column - Image with Glow and 3D Perspective */}
+            {/* Right Column - 3D Perspective Carousel */}
             <div className="relative order-1 md:order-2 animate-in fade-in zoom-in duration-1000 delay-200 perspective-[2000px] flex justify-center py-10 md:py-20">
               <div className="absolute -inset-20 bg-gradient-to-tr from-[#FCD535]/20 to-blue-500/10 blur-[120px] rounded-full opacity-40"></div>
 
-              <div className="relative transform-gpu transition-all duration-1000 hover:scale-105"
+              <div className="relative transform-gpu transition-all duration-1000"
                 style={{ transform: 'rotateX(25deg) rotateY(-10deg) rotateZ(-5deg)' }}>
-                <div className="relative rounded-[3rem] overflow-hidden border border-white/20 shadow-[0_80px_150px_-30px_rgba(0,0,0,0.8)] bg-[#1a1f2e]">
-                  <img
-                    src="https://res.cloudinary.com/duyb5dsw0/image/upload/v1767289139/Gemini_Generated_Image_zaf06jzaf06jzaf0_pjyox1.png"
-                    alt="SwiftRide Premium View"
-                    className="w-full h-auto min-w-[600px] md:min-w-[900px] max-w-none transform scale-110"
-                  />
-                  {/* Subtle overlay for depth */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40 pointer-events-none"></div>
+
+                {/* Carousel Container */}
+                <div className="relative rounded-[3rem] overflow-hidden border border-white/20 shadow-[0_80px_150px_-30px_rgba(0,0,0,0.8)] bg-[#1a1f2e] w-full min-w-[600px] md:min-w-[900px]">
+                  <div className="relative w-full aspect-[16/10]">
+                    {slides.map((url, idx) => (
+                      <div
+                        key={idx}
+                        className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${idx === activeSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                      >
+                        <img
+                          src={url}
+                          alt={`SwiftRide View ${idx + 1}`}
+                          className="w-full h-full object-cover transform scale-110"
+                        />
+                      </div>
+                    ))}
+                    {/* Subtle overlay for depth */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40 z-20 pointer-events-none"></div>
+                  </div>
                 </div>
 
                 {/* Visual shadow on the 'floor' */}
                 <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[110%] h-32 bg-black/70 blur-[70px] -z-10 rounded-full"></div>
+
+                {/* Carousel Indicators */}
+                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex gap-3 z-30">
+                  {slides.map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-3 h-3 rounded-full transition-all duration-300 ${i === activeSlide ? 'bg-[#FCD535] w-8' : 'bg-white/30'}`}
+                    />
+                  ))}
+                </div>
               </div>
 
               {/* Floating Stat Card */}
-              <div className="absolute -bottom-10 left-0 bg-[#252b3b]/95 backdrop-blur-2xl p-6 rounded-[2rem] border border-white/10 shadow-3xl hidden lg:block animate-bounce-slow z-30">
+              <div className="absolute -bottom-10 left-0 bg-[#252b3b]/95 backdrop-blur-2xl p-6 rounded-[2rem] border border-white/10 shadow-3xl hidden lg:block animate-bounce-slow z-40">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-[#FCD535] rounded-full flex items-center justify-center text-black font-black text-xl shadow-[0_0_20px_rgba(252,213,53,0.4)]">
                     99%
