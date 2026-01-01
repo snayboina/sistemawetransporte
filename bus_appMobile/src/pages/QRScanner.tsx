@@ -15,7 +15,6 @@ const QRScanner = () => {
   const qrCodeRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
-    // Criar a instância mas não iniciar automaticamente
     qrCodeRef.current = new Html5Qrcode("reader");
 
     return () => {
@@ -32,11 +31,18 @@ const QRScanner = () => {
       setIsScanning(true);
       setHasPermission(true);
 
+      // Determinar o tamanho ideal do qrbox baseado na largura da tela
+      // Queremos cobrir cerca de 70% da largura da tela, com um mínimo de 250px
+      const width = window.innerWidth;
+      const qrboxSize = Math.max(250, Math.floor(width * 0.7));
+
       await qrCodeRef.current.start(
-        { facingMode: "environment" }, // Forçar câmera traseira
+        { facingMode: "environment" },
         {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
+          fps: 20, // Aumentado para 20fps para maior fluidez
+          qrbox: { width: qrboxSize, height: qrboxSize },
+          aspectRatio: 1.0,
+          // Desabilitar animações internas do html5-qrcode para ganho de performance
         },
         onScanSuccess,
         onScanFailure
@@ -68,9 +74,7 @@ const QRScanner = () => {
   async function onScanSuccess(decodedText: string) {
     console.log(`Scan result: ${decodedText}`);
 
-    // Parar o scanner imediatamente
     await stopScanner();
-
     toast.success("Código lido com sucesso!");
 
     try {
@@ -80,11 +84,10 @@ const QRScanner = () => {
       } catch (e) {
         console.error("QR Code não contém um JSON válido", e);
         toast.error("QR Code inválido (formato incompatível)");
-        startScanner(); // Reiniciar se falhar o parse
+        startScanner();
         return;
       }
 
-      // 1. Procurar o cadastro no Supabase (se online)
       let registration = null;
       if (isOnline) {
         const { data, error } = await supabase
@@ -98,7 +101,6 @@ const QRScanner = () => {
         }
       }
 
-      // 2. Salvar a leitura (Offline ou Online)
       await saveReading({
         registration_id: registration?.id || qrData.id || qrData.registrationId || crypto.randomUUID(),
         driver_name: registration?.drivers?.name || qrData.driver || qrData.driverName || 'N/A',
@@ -119,17 +121,14 @@ const QRScanner = () => {
     } catch (error) {
       console.error("Erro ao processar scan:", error);
       toast.error("Erro ao salvar a leitura");
-      startScanner(); // Reiniciar em caso de erro no processo
+      startScanner();
     }
   }
 
-  function onScanFailure(error: any) {
-    // Ignorar erros de frames ruins
-  }
+  function onScanFailure(error: any) { }
 
   return (
     <div className="min-h-screen bg-black flex flex-col overflow-hidden relative">
-      {/* Header UI */}
       <div className="relative z-20 flex flex-col h-full w-full max-w-md mx-auto min-h-screen">
         <div className="flex items-center justify-between p-5 pt-8">
           <Link
@@ -147,47 +146,47 @@ const QRScanner = () => {
           </div>
         </div>
 
-        {/* Scanner Viewport */}
-        <div className="flex-1 flex flex-col items-center justify-center relative px-6">
+        <div className="flex-1 flex flex-col items-center justify-center relative px-4">
           <div className="text-center mb-8">
             <h2 className="text-white text-2xl font-bold mb-2">
               Scanner de QR Code
             </h2>
             <p className="text-gray-400 text-sm">
-              Aponte para o código colado no ônibus
+              Centralize o código na área demarcada
             </p>
           </div>
 
-          <div className="relative w-full aspect-square max-w-[320px] bg-gray-900 rounded-3xl border-2 border-primary/20 overflow-hidden shadow-2xl">
+          <div className="relative w-full max-w-[340px] aspect-square bg-gray-900 rounded-3xl border-2 border-primary/30 overflow-hidden shadow-2xl">
+            {/* Container do Scanner */}
             <div id="reader" className="w-full h-full" />
 
             {!isScanning && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-950/80 z-30 p-8 text-center">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-950/90 z-30 p-8 text-center">
                 {hasPermission === false ? (
                   <>
-                    <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4">
+                    <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4 border border-red-500/30">
                       <Icon name="block" size={32} className="text-red-500" />
                     </div>
-                    <p className="text-white font-medium mb-4">Acesso à câmera negado</p>
-                    <p className="text-gray-400 text-sm mb-6">Por favor, habilite a permissão nas configurações do seu navegador.</p>
+                    <p className="text-white font-medium mb-2">Acesso à câmera negado</p>
+                    <p className="text-gray-400 text-xs mb-8">Habilite o acesso nas configurações do Safari/Chrome/Samsung Internet.</p>
                     <button
                       onClick={() => window.location.reload()}
-                      className="w-full py-4 bg-white/10 text-white rounded-xl font-bold border border-white/20"
+                      className="w-full py-4 bg-white/10 text-white rounded-xl font-bold border border-white/20 active:bg-white/20"
                     >
                       Recarregar Página
                     </button>
                   </>
                 ) : (
                   <>
-                    <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
-                      <Icon name="photo_camera" size={32} className="text-primary" />
+                    <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-6 border border-primary/30 animate-pulse">
+                      <Icon name="photo_camera" size={40} className="text-primary" />
                     </div>
-                    <p className="text-white font-medium mb-6">Pronto para iniciar a leitura</p>
+                    <p className="text-white font-bold text-lg mb-8">Scanner Pronto</p>
                     <button
                       onClick={startScanner}
-                      className="w-full py-4 bg-primary text-primary-foreground rounded-xl font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
+                      className="w-full py-5 bg-primary text-primary-foreground rounded-2xl font-black text-lg shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all"
                     >
-                      Ativar Câmera
+                      INICIAR LEITURA
                     </button>
                   </>
                 )}
@@ -196,11 +195,17 @@ const QRScanner = () => {
 
             {isScanning && (
               <div className="absolute inset-0 pointer-events-none z-20">
-                <div className="absolute left-6 right-6 h-0.5 bg-primary shadow-[0_0_15px_rgba(252,213,53,0.5)] animate-scan-vertical" />
-                <div className="absolute top-4 left-4 w-10 h-10 border-l-4 border-t-4 border-primary rounded-tl-lg" />
-                <div className="absolute top-4 right-4 w-10 h-10 border-r-4 border-t-4 border-primary rounded-tr-lg" />
-                <div className="absolute bottom-4 left-4 w-10 h-10 border-l-4 border-b-4 border-primary rounded-bl-lg" />
-                <div className="absolute bottom-4 right-4 w-10 h-10 border-r-4 border-b-4 border-primary rounded-br-lg" />
+                {/* Linha de Scanner mais expressiva */}
+                <div className="absolute left-4 right-4 h-[2px] bg-primary shadow-[0_0_20px_#FCD535] animate-scan-vertical z-30" />
+
+                {/* Cantos Maiores e mais Brilhantes */}
+                <div className="absolute top-6 left-6 w-12 h-12 border-l-[6px] border-t-[6px] border-primary rounded-tl-lg shadow-[-2px_-2px_10px_rgba(252,213,53,0.4)]" />
+                <div className="absolute top-6 right-6 w-12 h-12 border-r-[6px] border-t-[6px] border-primary rounded-tr-lg shadow-[2px_-2px_10px_rgba(252,213,53,0.4)]" />
+                <div className="absolute bottom-6 left-6 w-12 h-12 border-l-[6px] border-b-[6px] border-primary rounded-bl-lg shadow-[-2px_2px_10px_rgba(252,213,53,0.4)]" />
+                <div className="absolute bottom-6 right-6 w-12 h-12 border-r-[6px] border-b-[6px] border-primary rounded-br-lg shadow-[2px_2px_10px_rgba(252,213,53,0.4)]" />
+
+                {/* Overlay Escuro Fora do QRBox (Simulado) */}
+                <div className="absolute inset-0 border-[40px] border-black/40" />
               </div>
             )}
           </div>
@@ -208,22 +213,44 @@ const QRScanner = () => {
           {isScanning && (
             <button
               onClick={stopScanner}
-              className="mt-8 px-6 py-2 bg-white/10 text-white rounded-full border border-white/20 text-sm font-medium"
+              className="mt-10 px-8 py-3 bg-red-500/20 text-red-500 rounded-full border border-red-500/40 text-sm font-bold active:bg-red-500/40 transition-colors"
             >
-              Parar Scanner
+              CANCELAR
             </button>
           )}
         </div>
 
-        {/* Bottom Stats */}
         <div className="p-10 text-center">
           {pendingCount > 0 && (
-            <p className="text-xs text-gray-400">
-              Você tem <span className="text-primary font-bold">{pendingCount}</span> leitura(s) aguardando sincronização.
-            </p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full border border-primary/20">
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+              <p className="text-xs text-primary font-bold uppercase tracking-widest">
+                {pendingCount} Pendente(s)
+              </p>
+            </div>
           )}
         </div>
       </div>
+
+      <style>{`
+                @keyframes scan-vertical {
+                    0% { top: 10%; }
+                    50% { top: 90%; }
+                    100% { top: 10%; }
+                }
+                .animate-scan-vertical {
+                    animation: scan-vertical 2.5s ease-in-out infinite;
+                }
+                #reader video {
+                    object-fit: cover !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                    border-radius: 20px;
+                }
+                #reader {
+                    border: none !important;
+                }
+            `}</style>
     </div>
   );
 };
