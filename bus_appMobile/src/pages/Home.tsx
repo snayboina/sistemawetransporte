@@ -29,9 +29,9 @@ const Home = () => {
           {/* Illustration Container */}
           <div className="w-full relative mb-8 flex justify-center">
             <div className="w-64 h-64 relative flex items-center justify-center">
-              <img 
-                src={busIllustration} 
-                alt="Ilustração de ônibus urbano" 
+              <img
+                src={busIllustration}
+                alt="Ilustração de ônibus urbano"
                 className="w-full h-full object-contain"
               />
             </div>
@@ -57,6 +57,14 @@ const Home = () => {
           >
             <Icon name="qr_code_scanner" size={24} />
             <span>Ler QR Code do Ônibus</span>
+          </Link>
+
+          <Link
+            to="/history"
+            className="btn-outline w-full border-primary/20 bg-primary/5 text-primary"
+          >
+            <Icon name="history" size={24} />
+            <span>Ver Leituras de Hoje</span>
           </Link>
 
           {/* Secondary Button: Manual Search */}

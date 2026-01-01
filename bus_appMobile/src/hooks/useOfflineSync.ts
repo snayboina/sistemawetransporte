@@ -111,5 +111,24 @@ export const useOfflineSync = () => {
         }
     };
 
-    return { isOnline, pendingCount, saveReading, syncData };
+    const getDailyReadings = async () => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        try {
+            const { data, error } = await supabase
+                .from('sync_readings')
+                .select('*')
+                .gte('read_at', today.toISOString())
+                .order('read_at', { ascending: false });
+
+            if (error) throw error;
+            return data;
+        } catch (err) {
+            console.error('Error fetching today\'s readings:', err);
+            return [];
+        }
+    };
+
+    return { isOnline, pendingCount, saveReading, syncData, getDailyReadings };
 };
