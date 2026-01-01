@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { Download, Printer, Copy, Check, MapPin, User, Bus, Route, QrCode } from 'lucide-react';
+import { Download, Printer, Copy, Check, MapPin, User, Bus, Route, QrCode, Upload, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import { mockDrivers, mockBuses, mockRoutes, mockRegistrations } from '@/data/mockData';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import * as XLSX from 'xlsx';
+import { Registration } from '@/types/transport';
 
 interface FormData {
   driverId: string;
@@ -25,7 +28,9 @@ interface FormData {
 
 export default function Cadastro() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const qrRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<FormData>({
     driverId: '',
     busId: '',
@@ -34,10 +39,130 @@ export default function Cadastro() {
   });
   const [generatedQR, setGeneratedQR] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const selectedDriver = mockDrivers.find((d) => d.id === formData.driverId);
   const selectedBus = mockBuses.find((b) => b.id === formData.busId);
   const selectedRoute = mockRoutes.find((r) => r.id === formData.routeId);
+
+  const handleDownloadExample = () => {
+    const exampleData = [
+      { Motorista: 'Carlos Silva', Onibus: 'AMB-3241', Placa: 'ABC-1234', Rota: 'Terminal Centro → Shopping', Localizacao: 'Terminal Central' },
+      { Motorista: 'Maria Santos', Onibus: 'AMB-3242', Placa: 'DEF-5678', Rota: 'Bairro Norte → Centro', Localizacao: 'Ponto Inicial Norte' },
+      { Motorista: 'João Oliveira', Onibus: 'AMB-3243', Placa: 'GHI-9012', Rota: 'Centro → Aeroporto', Localizacao: 'Praça Central' },
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(exampleData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Cadastros');
+
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 20 }, // Motorista
+      { wch: 15 }, // Onibus
+      { wch: 12 }, // Placa
+      { wch: 30 }, // Rota
+      { wch: 25 }, // Localizacao
+    ];
+
+    XLSX.writeFile(wb, 'modelo_cadastro_transporte.xlsx');
+
+    toast({
+      title: 'Planilha de exemplo baixada',
+      description: 'Use este modelo para preencher os dados.',
+    });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessing(true);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json<{
+        Motorista: string;
+        Onibus: string;
+        Placa: string;
+        Rota: string;
+        Localizacao: string;
+      }>(worksheet);
+
+      if (jsonData.length === 0) {
+        toast({
+          title: 'Planilha vazia',
+          description: 'A planilha não contém dados para importar.',
+          variant: 'destructive',
+        });
+        setIsProcessing(false);
+        return;
+      }
+
+      // Validate columns
+      const requiredColumns = ['Motorista', 'Onibus', 'Placa', 'Rota', 'Localizacao'];
+      const firstRow = jsonData[0];
+      const missingColumns = requiredColumns.filter(col => !(col in firstRow));
+
+      if (missingColumns.length > 0) {
+        toast({
+          title: 'Colunas faltando',
+          description: `As seguintes colunas são obrigatórias: ${missingColumns.join(', ')}`,
+          variant: 'destructive',
+        });
+        setIsProcessing(false);
+        return;
+      }
+
+      // Create registrations
+      const newRegistrations: Registration[] = jsonData.map((row, index) => {
+        const id = `REG-${Date.now()}-${index}`;
+        const qrData = JSON.stringify({
+          id,
+          driver: row.Motorista,
+          bus: row.Onibus,
+          plate: row.Placa,
+          route: row.Rota,
+          location: row.Localizacao,
+          createdAt: new Date().toISOString(),
+        });
+        return {
+          id,
+          driverId: `DRV-${index}`,
+          driverName: row.Motorista,
+          busNumber: row.Onibus,
+          busPlate: row.Placa,
+          routeId: `RT-${index}`,
+          routeName: row.Rota,
+          location: row.Localizacao,
+          createdAt: new Date(),
+          qrCodeData: qrData,
+        };
+      });
+
+      toast({
+        title: 'Importação concluída!',
+        description: `${newRegistrations.length} cadastros importados com sucesso.`,
+      });
+
+      // Navigate to QR Codes page with the registrations
+      navigate('/qrcodes', { state: { registrations: newRegistrations } });
+    } catch (error) {
+      toast({
+        title: 'Erro na importação',
+        description: 'Não foi possível ler a planilha. Verifique o formato.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,6 +302,39 @@ export default function Cadastro() {
         </p>
       </div>
 
+      {/* Excel Import Section */}
+      <div className="bg-card rounded-xl border border-border p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <FileSpreadsheet className="w-4 h-4 text-primary" />
+          </div>
+          <h2 className="font-semibold text-foreground">Importar via Excel</h2>
+        </div>
+        <p className="text-muted-foreground text-sm mb-4">
+          Cadastre múltiplos motoristas de uma vez importando uma planilha Excel
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button variant="outline" onClick={handleDownloadExample}>
+            <Download className="w-4 h-4 mr-2" />
+            Baixar Planilha de Exemplo
+          </Button>
+          <div className="relative">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileUpload}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              disabled={isProcessing}
+            />
+            <Button disabled={isProcessing}>
+              <Upload className="w-4 h-4 mr-2" />
+              {isProcessing ? 'Processando...' : 'Carregar Planilha'}
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Form Section */}
         <div className="bg-card rounded-xl border border-border p-6">
@@ -184,7 +342,7 @@ export default function Cadastro() {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Bus className="w-4 h-4 text-primary" />
             </div>
-            <h2 className="font-semibold text-foreground">Dados da Operação</h2>
+            <h2 className="font-semibold text-foreground">Cadastro Individual</h2>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
