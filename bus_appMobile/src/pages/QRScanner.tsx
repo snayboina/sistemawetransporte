@@ -23,6 +23,8 @@ const QRScanner = () => {
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [manualId, setManualId] = useState('');
   const [manualDriver, setManualDriver] = useState('');
+  const [isDivergent, setIsDivergent] = useState(false);
+
   const qrCodeRef = useRef<Html5Qrcode | null>(null);
 
   // Sincroniza o Ref com o State
@@ -238,19 +240,26 @@ const QRScanner = () => {
 
   async function handleManualSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!manualId.trim()) return;
+
+    // Validação: precisa ter pelo menos motorista OU placa
+    if (!manualId.trim() && !manualDriver.trim()) {
+      toast.error("Digite o nome do motorista OU a placa do ônibus.", { id: 'manual-look' });
+      return;
+    }
 
     setIsSaving(true);
     toast.loading("Buscando registro...", { id: 'manual-look' });
 
+    // Modo Offline
     if (!isOnline) {
       toast.success("Modo Offline: Registro manual salvo localmente.", { id: 'manual-look' });
 
       const qrData = {
         id: crypto.randomUUID(),
-        bus: manualId,
-        plate: manualId.toUpperCase(),
-        driver: 'N/A (Offline)',
+        bus: manualId || 'N/A',
+        plate: manualId ? manualId.toUpperCase().replace('-', '') : 'N/A',
+        driver: manualDriver || 'N/A (Offline)',
+        manualDriverName: manualDriver,
         route: 'N/A (Offline)',
         location: '0,0'
       };
@@ -258,57 +267,131 @@ const QRScanner = () => {
       setPreviewData(qrData);
       setIsManualOpen(false);
       setManualId('');
+      setManualDriver('');
+      setIsSaving(false);
       return;
     }
 
     try {
-      // 1. Busca primeiro o ônibus pela placa ou número
-      const { data: busData, error: busError } = await supabase
-        .from('buses')
-        .select('id, plate, bus_number')
-        .or(`plate.eq.${manualId.toUpperCase()},bus_number.eq.${manualId}`)
-        .maybeSingle();
+      let registrationData = null;
 
-      if (busError || !busData) {
-        toast.error("Ônibus não encontrado no sistema.", { id: 'manual-look' });
-        setIsSaving(false);
-        return;
+      // CENÁRIO 1: Busca por MOTORISTA (só nome digitado)
+      if (manualDriver.trim() && !manualId.trim()) {
+        const { data, error } = await supabase
+          .from('registrations')
+          .select('*, drivers(name), buses(bus_number, plate), routes(name)')
+          .ilike('drivers.name', `%${manualDriver.trim()}%`)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error || !data) {
+          toast.error(`Motorista "${manualDriver}" não encontrado em nenhuma escala ativa.`, { id: 'manual-look' });
+          setIsSaving(false);
+          return;
+        }
+
+        registrationData = data;
+        toast.success(`Ônibus encontrado para ${data.drivers?.name}!`, { id: 'manual-look' });
       }
 
-      // 2. Busca a escala (registration) mais recente para esse ônibus
-      const { data, error } = await supabase
-        .from('registrations')
-        .select('*, drivers(name), buses(bus_number, plate), routes(name)')
-        .eq('bus_id', busData.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // CENÁRIO 2: Busca por PLACA (só placa digitada)
+      else if (manualId.trim() && !manualDriver.trim()) {
+        // Normaliza placa: remove hífen e espaços
+        const normalizedPlate = manualId.trim().toUpperCase().replace(/[-\s]/g, '');
 
-      if (error || !data) {
-        toast.error("Nenhuma escala ativa encontrada para este ônibus.", { id: 'manual-look' });
-        setIsSaving(false);
-        return;
+        // Busca o ônibus pela placa normalizada
+        const { data: busData, error: busError } = await supabase
+          .from('buses')
+          .select('id, plate, bus_number')
+          .or(`plate.ilike.%${normalizedPlate}%,bus_number.eq.${manualId}`)
+          .maybeSingle();
+
+        if (busError || !busData) {
+          toast.error("Ônibus não encontrado no sistema.", { id: 'manual-look' });
+          setIsSaving(false);
+          return;
+        }
+
+        // Busca a escala mais recente para esse ônibus
+        const { data, error } = await supabase
+          .from('registrations')
+          .select('*, drivers(name), buses(bus_number, plate), routes(name)')
+          .eq('bus_id', busData.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error || !data) {
+          toast.error("Nenhuma escala ativa encontrada para este ônibus.", { id: 'manual-look' });
+          setIsSaving(false);
+          return;
+        }
+
+        registrationData = data;
+        toast.success(`Motorista encontrado: ${data.drivers?.name}!`, { id: 'manual-look' });
       }
 
-      toast.success("Registro encontrado!", { id: 'manual-look' });
+      // CENÁRIO 3: Busca por AMBOS (placa + motorista)
+      else if (manualId.trim() && manualDriver.trim()) {
+        const normalizedPlate = manualId.trim().toUpperCase().replace(/[-\s]/g, '');
 
-      const qrData = {
-        id: data.id,
-        bus: data.buses?.bus_number,
-        plate: data.buses?.plate,
-        driver: data.drivers?.name,
-        manualDriverName: manualDriver.trim() || data.drivers?.name,
-        route: data.routes?.name,
-        location: data.location || '0,0'
-      };
+        const { data: busData, error: busError } = await supabase
+          .from('buses')
+          .select('id, plate, bus_number')
+          .or(`plate.ilike.%${normalizedPlate}%,bus_number.eq.${manualId}`)
+          .maybeSingle();
 
-      // REGISTRO MANUAL: Sempre mostra preview para conferência, 
-      // ignorando o modo Direto para evitar envios acidentais por erro de digitação.
-      setPreviewData(qrData);
-      setIsManualOpen(false);
-      setManualId('');
-      setManualDriver('');
-      setIsSaving(false);
+        if (busError || !busData) {
+          toast.error("Ônibus não encontrado no sistema.", { id: 'manual-look' });
+          setIsSaving(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('registrations')
+          .select('*, drivers(name), buses(bus_number, plate), routes(name)')
+          .eq('bus_id', busData.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error || !data) {
+          toast.error("Nenhuma escala ativa encontrada.", { id: 'manual-look' });
+          setIsSaving(false);
+          return;
+        }
+
+        registrationData = data;
+
+        // Verifica se o motorista digitado é diferente do banco
+        const driverInDb = data.drivers?.name?.toLowerCase().trim();
+        const driverTyped = manualDriver.toLowerCase().trim();
+
+        if (driverInDb && !driverInDb.includes(driverTyped) && !driverTyped.includes(driverInDb)) {
+          setIsDivergent(true);
+          toast.warning("Divergência detectada! O motorista digitado é diferente do banco.", { id: 'manual-look' });
+        } else {
+          toast.success("Registro encontrado!", { id: 'manual-look' });
+        }
+      }
+
+      // Monta os dados para o preview
+      if (registrationData) {
+        const qrData = {
+          id: registrationData.id,
+          bus: registrationData.buses?.bus_number,
+          plate: registrationData.buses?.plate,
+          driver: registrationData.drivers?.name,
+          manualDriverName: manualDriver.trim() || registrationData.drivers?.name,
+          route: registrationData.routes?.name,
+          location: registrationData.location || '0,0'
+        };
+
+        setPreviewData(qrData);
+        setIsManualOpen(false);
+        setIsSaving(false);
+      }
 
     } catch (err) {
       console.error("Erro no registro manual:", err);
@@ -316,6 +399,7 @@ const QRScanner = () => {
       setIsSaving(false);
     }
   }
+
 
   function onScanFailure(error: any) { }
 
@@ -450,7 +534,6 @@ const QRScanner = () => {
                       placeholder="Ex: ABC1234"
                       className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-white font-black text-center text-xl focus:border-primary/50 focus:bg-white/10 focus:outline-none transition-all placeholder:text-gray-700"
                       autoFocus
-                      required
                     />
                   </div>
 
