@@ -100,16 +100,16 @@ export default function Welcome() {
               </div>
             </div>
 
-            {/* Right Column - 3D Perspective Carousel */}
-            <div className="relative order-1 md:order-2 animate-in fade-in zoom-in duration-1000 delay-200 perspective-[2000px] flex justify-center py-10 md:py-20">
-              <div className="absolute -inset-20 bg-gradient-to-tr from-[#FCD535]/20 to-blue-500/10 blur-[120px] rounded-full opacity-40"></div>
+            {/* Right Column - Large Flat Carousel */}
+            <div className="relative order-1 md:order-2 animate-in fade-in zoom-in duration-1000 delay-200 flex justify-center py-10">
+              {/* Intensified Background Glows */}
+              <div className="absolute -inset-20 bg-[#FCD535]/20 blur-[130px] rounded-full opacity-50"></div>
+              <div className="absolute -inset-10 bg-blue-500/10 blur-[100px] rounded-full opacity-30"></div>
 
-              <div className="relative transform-gpu transition-all duration-1000"
-                style={{ transform: 'rotateX(25deg) rotateY(-10deg) rotateZ(-5deg)' }}>
-
-                {/* Carousel Container */}
-                <div className="relative rounded-[3rem] overflow-hidden border border-white/20 shadow-[0_80px_150px_-30px_rgba(0,0,0,0.8)] bg-[#1a1f2e] w-full min-w-[600px] md:min-w-[900px]">
-                  <div className="relative w-full aspect-[16/10]">
+              <div className="relative w-full">
+                {/* Carousel Container - Large & Flat */}
+                <div className="relative rounded-[2rem] md:rounded-[3.5rem] overflow-hidden border border-white/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.9)] bg-[#1a1f2e] w-full">
+                  <div className="relative w-full aspect-[16/10] md:aspect-[4/3] lg:aspect-[16/10]">
                     {slides.map((url, idx) => (
                       <div
                         key={idx}
@@ -118,33 +118,32 @@ export default function Welcome() {
                         <img
                           src={url}
                           alt={`SwiftRide View ${idx + 1}`}
-                          className="w-full h-full object-cover transform scale-110"
+                          className="w-full h-full object-cover"
                         />
                       </div>
                     ))}
-                    {/* Subtle overlay for depth */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40 z-20 pointer-events-none"></div>
+                    {/* Premium Glass Overlay */}
+                    <div className="absolute inset-0 border-[8px] md:border-[16px] border-white/5 pointer-events-none z-20"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-20 pointer-events-none"></div>
                   </div>
                 </div>
 
-                {/* Visual shadow on the 'floor' */}
-                <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[110%] h-32 bg-black/70 blur-[70px] -z-10 rounded-full"></div>
-
-                {/* Carousel Indicators */}
-                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex gap-3 z-30">
+                {/* Carousel Indicators - Refined */}
+                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-4 z-30">
                   {slides.map((_, i) => (
-                    <div
+                    <button
                       key={i}
-                      className={`w-3 h-3 rounded-full transition-all duration-300 ${i === activeSlide ? 'bg-[#FCD535] w-8' : 'bg-white/30'}`}
+                      onClick={() => setActiveSlide(i)}
+                      className={`h-2 rounded-full transition-all duration-500 ${i === activeSlide ? 'bg-[#FCD535] w-12' : 'bg-white/20 w-4 hover:bg-white/40'}`}
                     />
                   ))}
                 </div>
               </div>
 
-              {/* Floating Stat Card */}
-              <div className="absolute -bottom-10 left-0 bg-[#252b3b]/95 backdrop-blur-2xl p-6 rounded-[2rem] border border-white/10 shadow-3xl hidden lg:block animate-bounce-slow z-40">
+              {/* Floating Stat Card - Repositioned for Flat Layout */}
+              <div className="absolute -bottom-6 -right-6 bg-[#252b3b]/95 backdrop-blur-2xl p-6 rounded-[2rem] border border-white/10 shadow-3xl hidden xl:block animate-bounce-slow z-40">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-[#FCD535] rounded-full flex items-center justify-center text-black font-black text-xl shadow-[0_0_20px_rgba(252,213,53,0.4)]">
+                  <div className="w-14 h-14 bg-[#FCD535] rounded-full flex items-center justify-center text-black font-black text-xl shadow-[0_0_25px_rgba(252,213,53,0.5)]">
                     99%
                   </div>
                   <div>
