@@ -4,76 +4,97 @@ import busIllustration from '@/assets/bus-illustration.png';
 
 const Home = () => {
   return (
-    <div className="min-h-screen bg-background flex flex-col overflow-hidden">
-      {/* Top Status Bar Area */}
-      <div className="w-full flex justify-between items-center p-6 pb-2 pt-12 z-10 relative">
-        <div className="flex items-center gap-2 opacity-0">
-          <Icon name="menu" />
+    <div className="min-h-screen bg-[#1a1f2e] flex flex-col overflow-hidden relative">
+      {/* Dynamic Background Elements */}
+      <div className="absolute top-1/4 -left-20 w-96 h-96 bg-[#FCD535]/10 blur-[130px] rounded-full"></div>
+      <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-blue-500/10 blur-[130px] rounded-full"></div>
+
+      {/* Top Bar Area */}
+      <div className="w-full flex justify-between items-center p-6 pt-12 z-20 relative">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10 backdrop-blur-md">
+            <Icon name="commute" className="text-[#FCD535]" size={20} />
+          </div>
+          <div>
+            <div className="text-white font-black text-sm tracking-tighter">SwiftRide</div>
+            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Mobile VIP</div>
+          </div>
         </div>
-        {/* Settings Button */}
+
         <Link
           to="/admin"
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-surface/50 backdrop-blur-md border border-border text-foreground hover:bg-surface-hover transition-colors"
+          className="flex items-center justify-center w-12 h-12 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 text-white hover:bg-white/10 transition-all active:scale-95 shadow-lg"
         >
           <Icon name="settings" size={20} />
         </Link>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col w-full max-w-md mx-auto relative px-6 justify-center">
-        {/* Decorative Background Glow */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="flex-1 flex flex-col w-full max-w-md mx-auto relative px-8 justify-center z-10">
 
         {/* Hero Section */}
-        <div className="flex flex-col items-center justify-center flex-1 min-h-0">
-          {/* Illustration Container */}
-          <div className="w-full relative mb-8 flex justify-center">
-            <div className="w-64 h-64 relative flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center mb-12">
+          {/* Illustration Container with Glow */}
+          <div className="relative mb-10">
+            <div className="absolute inset-0 bg-[#FCD535]/20 blur-[60px] rounded-full animate-pulse"></div>
+            <div className="w-64 h-64 relative flex items-center justify-center animate-float">
               <img
                 src={busIllustration}
-                alt="Ilustração de ônibus urbano"
-                className="w-full h-full object-contain"
+                alt="SwiftRide Logo"
+                className="w-full h-full object-contain filter drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
               />
             </div>
           </div>
 
           {/* Text Content */}
-          <div className="flex flex-col items-center text-center max-w-xs mx-auto z-10">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground mb-3">
-              Identifique seu ônibus
+          <div className="flex flex-col items-center text-center">
+            <h1 className="text-4xl font-black tracking-tighter text-white mb-4 leading-none">
+              Controle Total <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FCD535] to-[#F0B90B]">na palma da mão</span>
             </h1>
-            <p className="text-muted-foreground text-base font-normal leading-relaxed">
-              Aponte sua câmera para o código QR localizado na entrada do veículo para ver detalhes da rota.
+            <p className="text-gray-400 text-base font-medium leading-relaxed max-w-[280px]">
+              Escanear, monitorar e registrar sua frota nunca foi tão rápido e elegante.
             </p>
           </div>
         </div>
 
         {/* Action Buttons Section */}
-        <div className="w-full pb-12 pt-6 flex flex-col gap-4 z-10">
-          {/* Primary Button: Scan QR */}
+        <div className="w-full flex flex-col gap-4">
           <Link
             to="/scanner"
-            className="btn-primary w-full"
+            className="group relative w-full py-5 bg-[#FCD535] text-black rounded-[2rem] font-black text-lg shadow-[0_25px_50px_-12px_rgba(252,213,53,0.4)] flex items-center justify-center gap-3 transition-all active:scale-95 hover:scale-[1.02]"
           >
             <Icon name="qr_code_scanner" size={24} />
-            <span>Ler QR Code do Ônibus</span>
+            <span>INICIAR LEITURA</span>
+            <div className="absolute inset-0 rounded-[2rem] bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </Link>
 
           <Link
             to="/history"
-            className="btn-outline w-full border-primary/20 bg-primary/5 text-primary"
+            className="w-full py-5 bg-[#252b3b] text-white rounded-[2rem] border border-white/10 font-black text-lg shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95 backdrop-blur-md"
           >
             <Icon name="history" size={24} />
-            <span>Ver Leituras de Hoje</span>
+            <span>HISTÓRICO</span>
           </Link>
-
         </div>
       </div>
 
-      {/* Bottom Nav Indicator */}
-      <div className="w-full h-5 flex justify-center items-end pb-2">
-        <div className="w-32 h-1 bg-foreground/20 rounded-full" />
+      {/* Bottom Footer Info */}
+      <div className="p-8 pb-10 text-center z-10">
+        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">
+          Powered by SmartBus Technology
+        </p>
       </div>
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-15px); }
+        }
+        .animate-float {
+          animation: float 4s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };

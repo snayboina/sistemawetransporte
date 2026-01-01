@@ -22,6 +22,7 @@ const QRScanner = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [manualId, setManualId] = useState('');
+  const [manualDriver, setManualDriver] = useState('');
   const qrCodeRef = useRef<Html5Qrcode | null>(null);
 
   // Sincroniza o Ref com o State
@@ -195,7 +196,7 @@ const QRScanner = () => {
 
       await saveReading({
         registration_id: registration?.id || qrData.id || qrData.registrationId || crypto.randomUUID(),
-        driver_name: registration?.drivers?.name || qrData.driver || qrData.driverName || 'N/A',
+        driver_name: qrData.manualDriverName || registration?.drivers?.name || qrData.driver || qrData.driverName || 'N/A',
         bus_number: registration?.buses?.bus_number || qrData.bus || qrData.busNumber || 'N/A',
         bus_plate: registration?.buses?.plate || qrData.plate || qrData.busPlate || 'N/A',
         route_name: registration?.routes?.name || qrData.route || qrData.routeName || 'N/A',
@@ -296,6 +297,7 @@ const QRScanner = () => {
         bus: data.buses?.bus_number,
         plate: data.buses?.plate,
         driver: data.drivers?.name,
+        manualDriverName: manualDriver.trim() || data.drivers?.name,
         route: data.routes?.name,
         location: data.location || '0,0'
       };
@@ -305,6 +307,7 @@ const QRScanner = () => {
       setPreviewData(qrData);
       setIsManualOpen(false);
       setManualId('');
+      setManualDriver('');
       setIsSaving(false);
 
     } catch (err) {
@@ -425,36 +428,49 @@ const QRScanner = () => {
 
           {/* Manual Entry Modal/View */}
           {isManualOpen && (
-            <div className="w-full max-w-[340px] animate-scale-in bg-gray-900 rounded-3xl border border-white/10 p-6 shadow-2xl z-50">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/30">
-                  <Icon name="keyboard" className="text-primary" size={28} />
+            <div className="w-full max-w-[340px] animate-scale-in bg-[#1a1f2e]/95 backdrop-blur-2xl rounded-[2.5rem] border border-white/10 p-8 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.7)] z-50">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/30 shadow-[0_0_20px_rgba(252,213,53,0.2)]">
+                  <Icon name="keyboard" className="text-primary" size={32} />
                 </div>
                 <div>
-                  <h3 className="text-white font-bold text-lg leading-tight text-left">Registro Manual</h3>
-                  <p className="text-gray-400 text-xs text-left">Insira a placa ou número</p>
+                  <h3 className="text-white font-black text-xl leading-tight text-left">Registro Manual</h3>
+                  <p className="text-gray-400 text-xs text-left">Preencha os dados abaixo</p>
                 </div>
               </div>
 
               <form onSubmit={handleManualSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] text-gray-500 uppercase font-black ml-1">Placa ou ID do Ônibus</label>
-                  <input
-                    type="text"
-                    value={manualId}
-                    onChange={(e) => setManualId(e.target.value)}
-                    placeholder="Ex: ABC1234 ou 105"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-white font-bold text-center text-xl focus:border-primary/50 focus:outline-none placeholder:text-gray-700"
-                    autoFocus
-                    required
-                  />
+                <div className="space-y-4">
+                  <div className="space-y-2 text-left">
+                    <label className="text-[10px] text-gray-400 uppercase font-black ml-1 tracking-wider">Ônibus (Placa ou ID)</label>
+                    <input
+                      type="text"
+                      value={manualId}
+                      onChange={(e) => setManualId(e.target.value)}
+                      placeholder="Ex: ABC1234"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-white font-black text-center text-xl focus:border-primary/50 focus:bg-white/10 focus:outline-none transition-all placeholder:text-gray-700"
+                      autoFocus
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2 text-left">
+                    <label className="text-[10px] text-gray-400 uppercase font-black ml-1 tracking-wider">Nome do Motorista (Opcional)</label>
+                    <input
+                      type="text"
+                      value={manualDriver}
+                      onChange={(e) => setManualDriver(e.target.value)}
+                      placeholder="Nome do motorista"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-white font-bold text-center text-lg focus:border-primary/50 focus:bg-white/10 focus:outline-none transition-all placeholder:text-gray-700"
+                    />
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-3 pt-2">
+                <div className="flex flex-col gap-3 pt-4">
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="w-full py-5 bg-primary text-black rounded-2xl font-black text-lg shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
+                    className="w-full py-5 bg-primary text-black rounded-2xl font-black text-lg shadow-[0_20px_40px_-10px_rgba(252,213,53,0.3)] flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
                   >
                     {isSaving ? (
                       <div className="w-6 h-6 border-4 border-black border-t-transparent rounded-full animate-spin" />
@@ -467,11 +483,11 @@ const QRScanner = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setIsManualOpen(false); setManualId(''); startScanner(); }}
+                    onClick={() => { setIsManualOpen(false); setManualId(''); setManualDriver(''); startScanner(); }}
                     disabled={isSaving}
-                    className="w-full py-2 text-white font-bold opacity-60 hover:opacity-100 transition-all text-sm"
+                    className="w-full py-2 text-white font-bold opacity-40 hover:opacity-100 transition-all text-sm uppercase tracking-widest"
                   >
-                    VOLTAR PARA CÂMERA
+                    CANCELAR
                   </button>
                 </div>
               </form>
@@ -480,34 +496,45 @@ const QRScanner = () => {
 
           {/* Preview Area - Only shown when previewData exists */}
           {previewData && (
-            <div className="w-full max-w-[340px] animate-scale-in bg-gray-900 rounded-3xl border border-white/10 p-6 shadow-2xl">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/30">
-                  <Icon name="fact_check" className="text-primary" size={28} />
+            <div className="w-full max-w-[340px] animate-scale-in bg-[#1a1f2e]/95 backdrop-blur-2xl rounded-[2.5rem] border border-white/10 p-8 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.7)]">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/30 shadow-[0_0_20px_rgba(252,213,53,0.2)]">
+                  <Icon name="fact_check" className="text-primary" size={32} />
                 </div>
                 <div>
-                  <h3 className="text-white font-bold text-lg leading-tight text-left">Conferir Dados</h3>
-                  <p className="text-gray-400 text-xs text-left">Verifique antes de sincronizar</p>
+                  <h3 className="text-white font-black text-xl leading-tight text-left">Conferir Dados</h3>
+                  <p className="text-gray-400 text-xs text-left">Confirme as informações</p>
                 </div>
               </div>
 
-              <div className="space-y-4 mb-8">
-                <div className="bg-white/5 rounded-xl p-3 border border-white/5">
-                  <p className="text-[10px] text-gray-400 uppercase font-black mb-1">Ônibus / Placa</p>
-                  <p className="text-primary font-black text-xl">{previewData.bus || 'N/A'} - {previewData.plate || 'N/A'}</p>
+              <div className="space-y-5 mb-10">
+                <div className="bg-white/5 rounded-[1.5rem] p-5 border border-white/5 shadow-inner">
+                  <p className="text-[10px] text-gray-500 uppercase font-black mb-1.5 tracking-widest">Veículo Identificado</p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-primary font-black text-2xl tracking-tighter">{previewData.plate || 'N/A'}</p>
+                    <span className="text-gray-400 font-bold text-sm">#{previewData.bus || 'N/A'}</span>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 gap-3">
-                  <div>
-                    <p className="text-[10px] text-gray-500 uppercase font-bold mb-0.5">Motorista</p>
-                    <p className="text-white font-medium text-sm">{previewData.driver || 'N/A'}</p>
+
+                <div className="grid grid-cols-1 gap-5 px-1">
+                  <div className="flex items-start gap-4">
+                    <div className="w-2 h-10 bg-primary/20 rounded-full" />
+                    <div>
+                      <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-0.5">Motorista</p>
+                      <p className="text-white font-bold text-base leading-tight">
+                        {previewData.manualDriverName || previewData.driver || 'N/A'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] text-gray-500 uppercase font-bold mb-0.5">Rota</p>
-                    <p className="text-white font-medium text-sm">{previewData.route || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-gray-500 uppercase font-bold mb-0.5">Localização</p>
-                    <p className="text-white font-medium text-sm truncate">{previewData.location || 'N/A'}</p>
+
+                  <div className="flex items-start gap-4">
+                    <div className="w-2 h-10 bg-blue-500/20 rounded-full" />
+                    <div>
+                      <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-0.5">Rota</p>
+                      <p className="text-white font-bold text-base leading-tight truncate w-[200px]">
+                        {previewData.route || 'Sem Rota Definida'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -516,14 +543,14 @@ const QRScanner = () => {
                 <button
                   onClick={() => processAndSave(previewData)}
                   disabled={isSaving}
-                  className="w-full py-5 bg-primary text-black rounded-2xl font-black text-lg shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
+                  className="w-full py-5 bg-primary text-black rounded-2xl font-black text-lg shadow-[0_20px_40px_-10px_rgba(252,213,53,0.3)] flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
                 >
                   {isSaving ? (
                     <div className="w-6 h-6 border-4 border-black border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
                       <Icon name="check_circle" />
-                      CONFIRMAR E ENVIAR
+                      CONFIRMAR REGISTRO
                     </>
                   )}
                 </button>
@@ -534,9 +561,9 @@ const QRScanner = () => {
                     startScanner();
                   }}
                   disabled={isSaving}
-                  className="w-full py-4 text-white font-bold opacity-60 hover:opacity-100 transition-all text-sm"
+                  className="w-full py-2 text-white font-bold opacity-40 hover:opacity-100 transition-all text-sm uppercase tracking-widest"
                 >
-                  DESCARTAR E LER OUTRO
+                  DESCARTAR
                 </button>
               </div>
             </div>
