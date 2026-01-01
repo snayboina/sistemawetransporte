@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Home - Usuário Comum</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#FCD535",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#0B0E11", 
+                        "neutral-gray": "#9CA3AF",
+                        "surface-dark": "#15191E",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem", 
+                        "lg": "0.75rem", 
+                        "xl": "1rem", 
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased text-gray-900 dark:text-white h-screen overflow-hidden flex flex-col">
+<!-- Top Status Bar Area (Simulated for iOS feel) -->
+<div class="w-full flex justify-between items-center p-6 pb-2 pt-12 z-10 relative">
+<div class="flex items-center gap-2 opacity-0">
+<!-- Spacer for balance -->
+<span class="material-symbols-outlined">menu</span>
+</div>
+<!-- Settings/Profile Button -->
+<button class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-dark/50 backdrop-blur-md border border-white/10 text-white hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+</div>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col w-full max-w-md mx-auto relative px-6 justify-center">
+<!-- Decorative Background Glow -->
+<div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+<!-- Hero Section -->
+<div class="flex flex-col items-center justify-center flex-1 min-h-0">
+<!-- Illustration Container -->
+<div class="w-full relative mb-8 flex justify-center">
+<!-- Image Container with Aspect Ratio -->
+<div class="w-64 h-64 relative flex items-center justify-center">
+<div class="w-full h-full bg-contain bg-center bg-no-repeat" data-alt="Flat vector illustration of a modern bus in neutral dark tones front view" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAAHf3uDKLqbFhSnVbsR6ys4jVNVLgyJT1_gnaJLBBOcbnj89TcpsV0clrpxwFsVw5U2GoAQTuziouLe21YxyUSLj3vN8_sSR73hmEjjf94vCLaWL5twjVxS3GuNRBeUlEBtL_iO7cdF0oygPABTdVUDwfEIXH-iW_ZRL_BT0yObQBpWlSz7uhzbmhnVvq3LklmM8DuWMItM025bfYDWwmTqFY8eOVRzmIdnWLaUsp70jswCHplCTAVABrZsDrajTPbAJR2SNyVJr0");'>
+</div>
+</div>
+</div>
+<!-- Text Content -->
+<div class="flex flex-col items-center text-center max-w-xs mx-auto z-10">
+<h1 class="text-3xl font-bold tracking-tight text-white mb-3">
+                    Identifique seu ônibus
+                </h1>
+<p class="text-neutral-gray text-base font-normal leading-relaxed">
+                    Aponte sua câmera para o código QR localizado na entrada do veículo para ver detalhes da rota.
+                </p>
+</div>
+</div>
+<!-- Action Buttons Section (Bottom docked) -->
+<div class="w-full pb-12 pt-6 flex flex-col gap-4 z-10">
+<!-- Primary Button: Scan QR -->
+<button class="group w-full h-14 bg-primary hover:bg-[#ebc325] active:scale-[0.98] transition-all duration-200 rounded-xl flex items-center justify-center gap-3 shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-background-dark text-[24px]">qr_code_scanner</span>
+<span class="text-background-dark text-base font-bold tracking-wide">Ler QR Code do Ônibus</span>
+</button>
+<!-- Secondary Button: Manual Search -->
+<button class="group w-full h-14 bg-transparent border-2 border-primary/30 hover:border-primary hover:bg-primary/5 active:scale-[0.98] transition-all duration-200 rounded-xl flex items-center justify-center gap-3">
+<span class="material-symbols-outlined text-primary text-[24px]">search</span>
+<span class="text-primary text-base font-bold tracking-wide">Buscar manualmente</span>
+</button>
+</div>
+</div>
+<!-- Bottom Nav Indicator (iOS Home Bar) -->
+<div class="w-full h-5 flex justify-center items-end pb-2">
+<div class="w-32 h-1 bg-white/20 rounded-full"></div>
+</div>
+</body></html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Leitor de QR Code</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#fcd436",
+              "background-light": "#f8f8f5",
+              "background-dark": "#231f0f",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+            animation: {
+                'scan-vertical': 'scanVertical 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+            keyframes: {
+                scanVertical: {
+                    '0%, 100%': { transform: 'translateY(0)', opacity: '0.4' },
+                    '50%': { transform: 'translateY(240px)', opacity: '1' }, // Adjust based on frame height
+                }
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        /* Custom backdrop for the "focus" effect */
+        .scanner-backdrop {
+            background: rgba(15, 15, 15, 0.65);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        
+        /* Specific glow for the neon effect */
+        .neon-shadow {
+            box-shadow: 0 0 15px rgba(252, 212, 54, 0.6);
+        }
+
+        .neon-text-shadow {
+            text-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-dark font-display h-screen w-full overflow-hidden relative text-white">
+<!-- Layer 1: Simulated Camera Feed -->
+<div class="absolute inset-0 z-0">
+<!-- Image representing the camera view -->
+<img class="w-full h-full object-cover" data-alt="Blurred view of a city bus interior seen through a camera lens" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjvSwfcB0uJgu9YuWMn3JGb0f1frVrNj7qSgrodwsb0rhCSmMUM4cDNa7Tc5v4ZrCGWcqdqJtwIVuU9pQ1xLo9N4dVUn8op7E7X9MsMmNAnYEz0ex1rVQK4U4R1B-2ihR1nOqQiNYHmoK-mo6n1t41ShTxTHIMy9fKI0axpMMl_3OdyfODpM3_N7EaPmH7oloZ0EnT9fccRCTFQ-JB5BkF8Bzquap6MMgkdUJsiAXoRUcIXzN5r0ZJPe4YHRQIS3Zjb-YeFSEm4u8"/>
+<!-- Dark Overlay with Blur -->
+<div class="absolute inset-0 scanner-backdrop"></div>
+</div>
+<!-- Layer 2: UI Interface -->
+<div class="relative z-10 flex flex-col h-full w-full max-w-md mx-auto">
+<!-- Header / Top Bar -->
+<div class="flex items-center justify-between p-5 pt-8">
+<button aria-label="Fechar" class="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-white/20 transition-colors duration-200">
+<span class="material-symbols-outlined" data-size="24px">close</span>
+</button>
+<div class="px-3 py-1 bg-black/30 rounded-full backdrop-blur-sm border border-white/5">
+<span class="text-xs font-semibold tracking-widest uppercase text-white/90">Scanner</span>
+</div>
+<button aria-label="Flash" class="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 text-primary backdrop-blur-md hover:bg-primary/20 transition-colors duration-200 neon-shadow border border-primary/20">
+<span class="material-symbols-outlined" data-size="24px" style="font-variation-settings: 'FILL' 1;">flash_on</span>
+</button>
+</div>
+<!-- Main Content Area: Scanner -->
+<div class="flex-1 flex flex-col items-center justify-center relative -mt-16">
+<!-- Headline Text -->
+<h2 class="text-white text-2xl font-bold tracking-tight mb-8 neon-text-shadow text-center px-6">
+                Centralize o QR Code
+            </h2>
+<!-- Scanner Frame -->
+<div class="relative w-72 h-72">
+<!-- Scanning Laser Line -->
+<div class="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_15px_#fcd436] animate-scan-vertical z-20"></div>
+<!-- Corner Brackets (Neon Frame) -->
+<!-- Top Left -->
+<div class="absolute top-0 left-0 w-12 h-12 border-l-[4px] border-t-[4px] border-primary rounded-tl-xl neon-shadow"></div>
+<!-- Top Right -->
+<div class="absolute top-0 right-0 w-12 h-12 border-r-[4px] border-t-[4px] border-primary rounded-tr-xl neon-shadow"></div>
+<!-- Bottom Left -->
+<div class="absolute bottom-0 left-0 w-12 h-12 border-l-[4px] border-b-[4px] border-primary rounded-bl-xl neon-shadow"></div>
+<!-- Bottom Right -->
+<div class="absolute bottom-0 right-0 w-12 h-12 border-r-[4px] border-b-[4px] border-primary rounded-br-xl neon-shadow"></div>
+<!-- Inner Focus Area (Subtle Guide) -->
+<div class="absolute inset-4 border border-white/10 rounded-lg"></div>
+</div>
+<!-- Helper Text -->
+<div class="mt-8 px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-white/5">
+<p class="text-gray-300 text-sm font-medium leading-normal text-center">
+                    A leitura será automática
+                </p>
+</div>
+</div>
+<!-- Bottom Controls -->
+<div class="p-6 pb-10 w-full bg-gradient-to-t from-black/80 to-transparent">
+<div class="flex items-center justify-between gap-4">
+<!-- Gallery Icon -->
+<button class="flex flex-col items-center justify-center gap-1 group">
+<div class="w-12 h-12 rounded-2xl bg-[#231f10]/80 border border-primary/30 flex items-center justify-center text-primary/80 group-hover:text-primary group-hover:border-primary group-hover:shadow-[0_0_10px_rgba(252,212,54,0.3)] transition-all duration-300 backdrop-blur-md">
+<span class="material-symbols-outlined">photo_library</span>
+</div>
+<span class="text-[10px] font-medium text-white/60 group-hover:text-white transition-colors">Galeria</span>
+</button>
+<!-- Primary Action Button -->
+<button class="flex-1 h-14 bg-primary hover:bg-[#ebd05f] active:scale-[0.98] rounded-full flex items-center justify-center gap-3 transition-all duration-300 shadow-[0_4px_20px_rgba(252,212,54,0.25)] border-2 border-transparent hover:border-white/20">
+<span class="material-symbols-outlined text-background-dark">keyboard</span>
+<span class="text-background-dark text-base font-bold tracking-wide">Digitar TAG do ônibus</span>
+</button>
+<!-- Help Icon -->
+<button class="flex flex-col items-center justify-center gap-1 group">
+<div class="w-12 h-12 rounded-2xl bg-[#231f10]/80 border border-primary/30 flex items-center justify-center text-primary/80 group-hover:text-primary group-hover:border-primary group-hover:shadow-[0_0_10px_rgba(252,212,54,0.3)] transition-all duration-300 backdrop-blur-md">
+<span class="material-symbols-outlined">help</span>
+</div>
+<span class="text-[10px] font-medium text-white/60 group-hover:text-white transition-colors">Ajuda</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Login - Administrador</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#fcd436",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#121212", // Deep black/gray for premium feel
+                        "surface-dark": "#1E1E1E", // Slightly lighter for inputs
+                        "border-dark": "#333333",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased selection:bg-primary selection:text-black">
+<!-- Main Container simulating a mobile phone screen -->
+<div class="relative min-h-screen w-full flex flex-col overflow-hidden bg-background-dark text-white">
+<!-- Diagonal Yellow Background Detail -->
+<!-- This is an abstract shape using CSS clip-path or absolute positioning -->
+<div class="absolute top-0 right-0 w-[80%] h-[35%] bg-gradient-to-bl from-primary/20 via-primary/5 to-transparent z-0 pointer-events-none rounded-bl-full opacity-60"></div>
+<div class="absolute top-[-50px] right-[-50px] w-48 h-48 bg-primary blur-[80px] rounded-full opacity-20 z-0"></div>
+<!-- Content Wrapper -->
+<div class="relative z-10 flex flex-1 flex-col px-6 pt-12 pb-8 h-full justify-between">
+<!-- Top Section: Icon & Header -->
+<div class="flex flex-col items-center justify-center mt-10">
+<!-- Minimalist Icon Wrapper -->
+<div class="flex items-center justify-center w-20 h-20 rounded-2xl bg-surface-dark border border-border-dark mb-8 shadow-lg shadow-black/50">
+<span class="material-symbols-outlined text-primary text-5xl">shield_lock</span>
+</div>
+<h1 class="text-white tracking-tight text-[28px] font-bold leading-tight text-center mb-2">
+                    Acesso Administrativo
+                </h1>
+<p class="text-gray-400 text-sm text-center font-normal">
+                    Secure Transport System
+                </p>
+</div>
+<!-- Middle Section: Form -->
+<div class="w-full flex flex-col gap-5 mt-8">
+<!-- Email Field -->
+<div class="flex flex-col gap-2">
+<label class="text-gray-300 text-sm font-medium ml-1" for="email">E-mail corporativo</label>
+<div class="relative flex items-center">
+<span class="absolute left-4 text-gray-500 material-symbols-outlined text-xl">mail</span>
+<input class="form-input flex w-full rounded-lg border border-border-dark bg-surface-dark h-14 pl-12 pr-4 text-base text-white placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none" id="email" placeholder="admin@empresa.com" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="flex flex-col gap-2">
+<label class="text-gray-300 text-sm font-medium ml-1" for="password">Senha de acesso</label>
+<div class="relative flex items-center">
+<span class="absolute left-4 text-gray-500 material-symbols-outlined text-xl">lock</span>
+<input class="form-input flex w-full rounded-lg border border-border-dark bg-surface-dark h-14 pl-12 pr-12 text-base text-white placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none" id="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 text-gray-500 hover:text-white transition-colors flex items-center justify-center" type="button">
+<span class="material-symbols-outlined text-xl">visibility_off</span>
+</button>
+</div>
+</div>
+<!-- Forgot Password Link -->
+<div class="flex justify-end">
+<a class="text-sm font-medium text-primary hover:text-primary/80 transition-colors" href="#">
+                        Esqueceu a senha?
+                    </a>
+</div>
+<!-- Main Action Button -->
+<button class="w-full h-14 bg-primary hover:bg-[#eac42f] active:scale-[0.98] transition-all rounded-lg flex items-center justify-center mt-4 shadow-lg shadow-primary/20">
+<span class="text-black font-bold text-base tracking-wide uppercase">Entrar</span>
+<span class="material-symbols-outlined text-black ml-2 text-xl">arrow_forward</span>
+</button>
+</div>
+<!-- Bottom Section: Footer/Support -->
+<div class="flex flex-col items-center justify-end gap-4 mt-auto pt-8">
+<div class="flex items-center gap-2 opacity-50">
+<span class="material-symbols-outlined text-gray-400 text-lg">qr_code_scanner</span>
+<span class="text-gray-400 text-xs font-medium tracking-wider">SECURE QR READER</span>
+</div>
+<p class="text-gray-600 text-[11px] text-center max-w-[200px] leading-relaxed">
+                    Problemas com o acesso?<br/>Contate o suporte: 0800-123-456
+                </p>
+</div>
+</div>
+<!-- Decorative diagonal line at the very bottom right (optional subtle touch) -->
+<div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+</div>
+</body></html>
