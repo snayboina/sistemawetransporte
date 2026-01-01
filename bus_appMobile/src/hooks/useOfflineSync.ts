@@ -62,7 +62,7 @@ export const useOfflineSync = () => {
 
         if (isOnline) {
             try {
-                const { error } = await supabase.from('sync_readings').insert([newReading]);
+                const { error } = await supabase.from('readings').insert([newReading]);
                 if (error) throw error;
                 toast({ title: 'Leitura enviada!', description: 'Sincronizado com sucesso.' });
             } catch (err) {
@@ -97,7 +97,7 @@ export const useOfflineSync = () => {
         toast({ title: 'Sincronizando...', description: `Enviando ${data.length} leituras pendentes.` });
 
         try {
-            const { error } = await supabase.from('sync_readings').insert(data);
+            const { error } = await supabase.from('readings').insert(data);
             if (error) throw error;
 
             localStorage.removeItem(STORAGE_KEY);
@@ -120,7 +120,7 @@ export const useOfflineSync = () => {
         let remoteReadings: PendingReading[] = [];
         try {
             const { data, error } = await supabase
-                .from('sync_readings')
+                .from('readings')
                 .select('*')
                 .gte('read_at', today.toISOString())
                 .order('read_at', { ascending: false });
