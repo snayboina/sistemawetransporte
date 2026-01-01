@@ -289,7 +289,7 @@ const QRScanner = () => {
           // Use !inner para filtrar pela tabela relacionada
           .select('*, drivers!inner(name), buses(bus_number, plate), routes(name)')
           .ilike('drivers.name', `%${manualDriver.trim()}%`)
-          .eq('status', 'active') // Apenas escalas ativas
+          // .eq('status', 'active')  <-- Removido para encontrar o ultimo registro mesmo se nao estiver active
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
