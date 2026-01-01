@@ -286,8 +286,10 @@ const QRScanner = () => {
       if (manualDriver.trim() && !manualId.trim()) {
         const { data, error } = await supabase
           .from('registrations')
-          .select('*, drivers(name), buses(bus_number, plate), routes(name)')
+          // Use !inner para filtrar pela tabela relacionada
+          .select('*, drivers!inner(name), buses(bus_number, plate), routes(name)')
           .ilike('drivers.name', `%${manualDriver.trim()}%`)
+          .eq('status', 'active') // Apenas escalas ativas
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
