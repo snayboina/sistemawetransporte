@@ -27,13 +27,13 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-            <Bus className="w-6 h-6 text-primary-foreground" />
+          <div className="w-10 h-10 rounded-lg bg-[#FCD535] flex items-center justify-center">
+            <Bus className="w-6 h-6 text-black" />
           </div>
           {!isCollapsed && (
             <div className="animate-fade-in">
-              <h1 className="font-bold text-foreground text-sm">SecureTransport</h1>
-              <p className="text-xs text-muted-foreground">Sistema de Gestão</p>
+              <h1 className="font-bold text-foreground text-sm">SmartBus</h1>
+              <p className="text-xs text-muted-foreground">Francis Developer</p>
             </div>
           )}
         </div>
