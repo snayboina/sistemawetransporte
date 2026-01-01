@@ -20,6 +20,8 @@ const QRScanner = () => {
   const isProcessingRef = useRef(false); // Trava para evitar scans duplicados
   const [previewData, setPreviewData] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isManualOpen, setIsManualOpen] = useState(false);
+  const [manualId, setManualId] = useState('');
   const qrCodeRef = useRef<Html5Qrcode | null>(null);
 
   // Sincroniza o Ref com o State
@@ -39,13 +41,13 @@ const QRScanner = () => {
       gainNode.connect(audioCtx.destination);
 
       oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+      oscillator.frequency.setValueAtTime(2200, audioCtx.currentTime); // Tom mais agudo
       gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.01);
-      gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
+      gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.08); // Mais curto
 
       oscillator.start(audioCtx.currentTime);
-      oscillator.stop(audioCtx.currentTime + 0.2);
+      oscillator.stop(audioCtx.currentTime + 0.08);
     } catch (e) {
       console.warn("Não foi possível tocar o som de feedback", e);
     }
@@ -233,6 +235,94 @@ const QRScanner = () => {
     }
   }
 
+  async function handleManualSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!manualId.trim()) return;
+
+    setIsSaving(true);
+    toast.loading("Buscando registro...", { id: 'manual-look' });
+
+    if (!isOnline) {
+      toast.success("Modo Offline: Registro manual salvo localmente.", { id: 'manual-look' });
+
+      const qrData = {
+        id: crypto.randomUUID(),
+        bus: manualId,
+        plate: manualId.toUpperCase(),
+        driver: 'N/A (Offline)',
+        route: 'N/A (Offline)',
+        location: '0,0'
+      };
+
+      if (autoSendRef.current) {
+        await processAndSave(qrData, true);
+        setIsManualOpen(false);
+        setManualId('');
+      } else {
+        setPreviewData(qrData);
+        setIsManualOpen(false);
+        setManualId('');
+      }
+      return;
+    }
+
+    try {
+      // 1. Busca primeiro o ônibus pela placa ou número
+      const { data: busData, error: busError } = await supabase
+        .from('buses')
+        .select('id, plate, bus_number')
+        .or(`plate.eq.${manualId.toUpperCase()},bus_number.eq.${manualId}`)
+        .maybeSingle();
+
+      if (busError || !busData) {
+        toast.error("Ônibus não encontrado no sistema.", { id: 'manual-look' });
+        setIsSaving(false);
+        return;
+      }
+
+      // 2. Busca a escala (registration) mais recente para esse ônibus
+      const { data, error } = await supabase
+        .from('registrations')
+        .select('*, drivers(name), buses(bus_number, plate), routes(name)')
+        .eq('bus_id', busData.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error || !data) {
+        toast.error("Nenhuma escala ativa encontrada para este ônibus.", { id: 'manual-look' });
+        setIsSaving(false);
+        return;
+      }
+
+      toast.success("Registro encontrado!", { id: 'manual-look' });
+
+      const qrData = {
+        id: data.id,
+        bus: data.buses?.bus_number,
+        plate: data.buses?.plate,
+        driver: data.drivers?.name,
+        route: data.routes?.name,
+        location: data.location || '0,0'
+      };
+
+      if (autoSendRef.current) {
+        await processAndSave(qrData, true);
+        setIsManualOpen(false);
+        setManualId('');
+      } else {
+        setPreviewData(qrData);
+        setIsManualOpen(false);
+        setManualId('');
+      }
+
+    } catch (err) {
+      console.error("Erro no registro manual:", err);
+      toast.error("Erro ao buscar dados.", { id: 'manual-look' });
+      setIsSaving(false);
+    }
+  }
+
   function onScanFailure(error: any) { }
 
   return (
@@ -323,15 +413,79 @@ const QRScanner = () => {
               )}
             </div>
 
-            {isScanning && (
-              <button
-                onClick={stopScanner}
-                className="mt-10 px-8 py-3 bg-red-500/20 text-red-500 rounded-full border border-red-500/40 text-sm font-bold"
-              >
-                CANCELAR
-              </button>
+            {isScanning && !previewData && (
+              <div className="flex flex-col gap-3 mt-8 w-full">
+                <button
+                  onClick={stopScanner}
+                  className="w-full px-8 py-4 bg-red-500/20 text-red-500 rounded-2xl border border-red-500/40 text-sm font-bold"
+                >
+                  PARAR CAMERA
+                </button>
+                <button
+                  onClick={() => { stopScanner(); setIsManualOpen(true); }}
+                  className="w-full px-8 py-4 bg-white/10 text-white rounded-2xl border border-white/20 text-sm font-bold flex items-center justify-center gap-2"
+                >
+                  <Icon name="keyboard" size={18} />
+                  DIGITAR PLACA/ID
+                </button>
+              </div>
             )}
           </div>
+
+          {/* Manual Entry Modal/View */}
+          {isManualOpen && (
+            <div className="w-full max-w-[340px] animate-scale-in bg-gray-900 rounded-3xl border border-white/10 p-6 shadow-2xl z-50">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/30">
+                  <Icon name="keyboard" className="text-primary" size={28} />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-lg leading-tight text-left">Registro Manual</h3>
+                  <p className="text-gray-400 text-xs text-left">Insira a placa ou número</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleManualSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] text-gray-500 uppercase font-black ml-1">Placa ou ID do Ônibus</label>
+                  <input
+                    type="text"
+                    value={manualId}
+                    onChange={(e) => setManualId(e.target.value)}
+                    placeholder="Ex: ABC1234 ou 105"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-white font-bold text-center text-xl focus:border-primary/50 focus:outline-none placeholder:text-gray-700"
+                    autoFocus
+                    required
+                  />
+                </div>
+
+                <div className="flex flex-col gap-3 pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="w-full py-5 bg-primary text-black rounded-2xl font-black text-lg shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {isSaving ? (
+                      <div className="w-6 h-6 border-4 border-black border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Icon name="search" />
+                        BUSCAR E REGISTRAR
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIsManualOpen(false); setManualId(''); startScanner(); }}
+                    disabled={isSaving}
+                    className="w-full py-2 text-white font-bold opacity-60 hover:opacity-100 transition-all text-sm"
+                  >
+                    VOLTAR PARA CÂMERA
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
           {/* Preview Area - Only shown when previewData exists */}
           {previewData && (

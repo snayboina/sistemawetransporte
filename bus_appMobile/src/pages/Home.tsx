@@ -67,14 +67,6 @@ const Home = () => {
             <span>Ver Leituras de Hoje</span>
           </Link>
 
-          {/* Secondary Button: Manual Search */}
-          <Link
-            to="/bus/ABC-1234"
-            className="btn-outline w-full"
-          >
-            <Icon name="search" size={24} />
-            <span>Buscar manualmente</span>
-          </Link>
         </div>
       </div>
 
