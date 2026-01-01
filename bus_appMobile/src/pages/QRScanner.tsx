@@ -254,15 +254,9 @@ const QRScanner = () => {
         location: '0,0'
       };
 
-      if (autoSendRef.current) {
-        await processAndSave(qrData, true);
-        setIsManualOpen(false);
-        setManualId('');
-      } else {
-        setPreviewData(qrData);
-        setIsManualOpen(false);
-        setManualId('');
-      }
+      setPreviewData(qrData);
+      setIsManualOpen(false);
+      setManualId('');
       return;
     }
 
@@ -306,15 +300,12 @@ const QRScanner = () => {
         location: data.location || '0,0'
       };
 
-      if (autoSendRef.current) {
-        await processAndSave(qrData, true);
-        setIsManualOpen(false);
-        setManualId('');
-      } else {
-        setPreviewData(qrData);
-        setIsManualOpen(false);
-        setManualId('');
-      }
+      // REGISTRO MANUAL: Sempre mostra preview para conferência, 
+      // ignorando o modo Direto para evitar envios acidentais por erro de digitação.
+      setPreviewData(qrData);
+      setIsManualOpen(false);
+      setManualId('');
+      setIsSaving(false);
 
     } catch (err) {
       console.error("Erro no registro manual:", err);
