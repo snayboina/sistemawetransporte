@@ -1,11 +1,60 @@
 import { Bus, Users, QrCode, MapPin, TrendingUp, Clock, Activity } from 'lucide-react';
 import { StatsCard } from '@/components/dashboard/StatsCard';
-import { mockDashboardStats, mockSyncReadings } from '@/data/mockData';
-import { format } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { supabase } from '@/lib/supabase';
+import { useEffect, useState } from 'react';
+import { SyncReading } from '@/types/transport';
 
 export default function Dashboard() {
-  const recentReadings = mockSyncReadings.slice(0, 5);
+  const [stats, setStats] = useState({
+    activeBuses: 0,
+    activeDrivers: 0,
+    todayReadings: 0,
+    activeRoutes: 0,
+    totalRoutes: 0
+  });
+  const [recentReadings, setRecentReadings] = useState<SyncReading[]>([]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    const today = new Date();
+    const start = startOfDay(today).toISOString();
+    const end = endOfDay(today).toISOString();
+
+    const [buses, drivers, routes, todayReadings, recent] = await Promise.all([
+      supabase.from('buses').select('id', { count: 'exact' }),
+      supabase.from('drivers').select('id', { count: 'exact' }),
+      supabase.from('routes').select('id', { count: 'exact' }),
+      supabase.from('sync_readings').select('id', { count: 'exact' }).gte('read_at', start).lte('read_at', end),
+      supabase.from('sync_readings').select('*').order('read_at', { ascending: false }).limit(5)
+    ]);
+
+    setStats({
+      activeBuses: buses.count || 0,
+      activeDrivers: drivers.count || 0,
+      todayReadings: todayReadings.count || 0,
+      activeRoutes: routes.count || 0, // Simplifying to total routes for now
+      totalRoutes: routes.count || 0
+    });
+
+    if (recent.data) {
+      setRecentReadings(recent.data.map((r: any) => ({
+        id: r.id,
+        registrationId: r.registration_id,
+        driverName: r.driver_name,
+        busNumber: r.bus_number,
+        busPlate: r.bus_plate,
+        routeName: r.route_name,
+        location: r.location,
+        readingLocation: r.reading_location,
+        readAt: new Date(r.read_at)
+      })));
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -25,25 +74,25 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           title="Ônibus Ativos"
-          value={mockDashboardStats.activeBuses}
+          value={stats.activeBuses}
           icon={Bus}
-          trend={{ value: 3.2, isPositive: true }}
+          trend={{ value: 0, isPositive: true }}
         />
         <StatsCard
           title="Motoristas Ativos"
-          value={mockDashboardStats.activeDrivers}
+          value={stats.activeDrivers}
           icon={Users}
-          trend={{ value: 1.5, isPositive: true }}
+          trend={{ value: 0, isPositive: true }}
         />
         <StatsCard
           title="Leituras Hoje"
-          value={mockDashboardStats.todayReadings}
+          value={stats.todayReadings}
           icon={QrCode}
-          trend={{ value: 12.8, isPositive: true }}
+          trend={{ value: 0, isPositive: true }}
         />
         <StatsCard
           title="Rotas em Operação"
-          value={`${mockDashboardStats.activeRoutes}/32`}
+          value={`${stats.activeRoutes}/${stats.totalRoutes || 32}`}
           icon={MapPin}
         />
       </div>
@@ -103,7 +152,7 @@ export default function Dashboard() {
                 <span className="font-medium text-foreground">96.2%</span>
               </div>
               <div className="h-2 rounded-full bg-accent overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-primary rounded-full transition-all duration-1000"
                   style={{ width: '96.2%' }}
                 />
@@ -115,7 +164,7 @@ export default function Dashboard() {
                 <span className="font-medium text-foreground">118</span>
               </div>
               <div className="h-2 rounded-full bg-accent overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-success rounded-full transition-all duration-1000"
                   style={{ width: '78%' }}
                 />
@@ -127,7 +176,7 @@ export default function Dashboard() {
                 <span className="font-medium text-foreground">87.5%</span>
               </div>
               <div className="h-2 rounded-full bg-accent overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-primary rounded-full transition-all duration-1000"
                   style={{ width: '87.5%' }}
                 />

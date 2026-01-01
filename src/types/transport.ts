@@ -5,7 +5,7 @@ export interface Driver {
 
 export interface Bus {
   id: string;
-  number: string;
+  bus_number: string;
   plate: string;
 }
 

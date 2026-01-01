@@ -13,11 +13,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { mockDrivers, mockBuses, mockRoutes, mockRegistrations } from '@/data/mockData';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
-import { Registration } from '@/types/transport';
+import { Registration, Driver, Bus as BusType, Route as TransportRoute } from '@/types/transport';
+import { supabase } from '@/lib/supabase';
+import { useEffect } from 'react';
 
 interface FormData {
   driverId: string;
@@ -40,10 +41,78 @@ export default function Cadastro() {
   const [generatedQR, setGeneratedQR] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [buses, setBuses] = useState<BusType[]>([]);
+  const [routes, setRoutes] = useState<TransportRoute[]>([]);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [viewingSpecificReg, setViewingSpecificReg] = useState<Registration | null>(null);
 
-  const selectedDriver = mockDrivers.find((d) => d.id === formData.driverId);
-  const selectedBus = mockBuses.find((b) => b.id === formData.busId);
-  const selectedRoute = mockRoutes.find((r) => r.id === formData.routeId);
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  const fetchInitialData = async () => {
+    try {
+      const [d, b, r, reg] = await Promise.all([
+        supabase.from('drivers').select('*'),
+        supabase.from('buses').select('*'),
+        supabase.from('routes').select('*'),
+        supabase.from('registrations').select(`
+          *,
+          drivers:driver_id(name),
+          buses:bus_id(bus_number, plate),
+          routes:route_id(name)
+        `).order('created_at', { ascending: false }).limit(5)
+      ]);
+
+      if (d.error) console.error('Erro drivers:', d.error);
+      if (b.error) console.error('Erro buses:', b.error);
+      if (r.error) console.error('Erro routes:', r.error);
+      if (reg.error) {
+        console.error('Erro registrations:', reg.error);
+        toast({
+          title: 'Erro ao carregar dados',
+          description: reg.error.message,
+          variant: 'destructive',
+        });
+      }
+
+      if (d.data) setDrivers(d.data);
+      if (b.data) setBuses(b.data);
+      if (r.data) setRoutes(r.data);
+
+      if (reg.data) {
+        console.log('Registros brutos carregados:', reg.data);
+        const mapped = reg.data.map((item: any) => ({
+          id: item.id,
+          driverId: item.driver_id,
+          driverName: item.drivers?.name || item.driver_id || 'N/A',
+          busNumber: item.buses?.bus_number || item.bus_id || 'N/A',
+          busPlate: item.buses?.plate || 'N/A',
+          routeId: item.route_id,
+          routeName: item.routes?.name || item.route_id || 'N/A',
+          location: item.location,
+          createdAt: new Date(item.created_at || new Date()),
+          qrCodeData: item.qr_code_data
+        }));
+        console.log('Registros mapeados:', mapped);
+        setRegistrations(mapped);
+      }
+    } catch (err) {
+      console.error('Erro inesperado:', err);
+    }
+  };
+
+  const selectedDriver = drivers.find((d) => d.id === formData.driverId);
+  const selectedBus = buses.find((b) => b.id === formData.busId);
+  const selectedRoute = routes.find((r) => r.id === formData.routeId);
+
+  const handleSelectRegistration = (reg: Registration) => {
+    setViewingSpecificReg(reg);
+    setGeneratedQR(reg.qrCodeData);
+    // Scroll to QR section
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleDownloadExample = () => {
     const exampleData = [
@@ -166,7 +235,7 @@ export default function Cadastro() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.driverId || !formData.busId || !formData.routeId || !formData.location) {
       toast({
         title: 'Campos obrigatórios',
@@ -179,7 +248,7 @@ export default function Cadastro() {
     const qrData = JSON.stringify({
       id: `TRP-${Date.now()}`,
       driver: selectedDriver?.name,
-      bus: selectedBus?.number,
+      bus: selectedBus?.bus_number,
       plate: selectedBus?.plate,
       route: selectedRoute?.name,
       routeCode: selectedRoute?.code,
@@ -187,17 +256,43 @@ export default function Cadastro() {
       createdAt: new Date().toISOString(),
     });
 
-    setGeneratedQR(qrData);
-    
-    toast({
-      title: 'QR Code gerado com sucesso!',
-      description: 'O código está pronto para uso.',
-    });
+    setViewingSpecificReg(null);
+    saveToSupabase(qrData);
+  };
+
+  const saveToSupabase = async (qrData: string) => {
+    try {
+      const { data, error } = await supabase.from('registrations').insert([
+        {
+          driver_id: formData.driverId,
+          bus_id: formData.busId,
+          route_id: formData.routeId,
+          location: formData.location,
+          qr_code_data: qrData
+        }
+      ]).select();
+
+      if (error) throw error;
+
+      setGeneratedQR(qrData);
+      fetchInitialData(); // Refresh list
+
+      toast({
+        title: 'QR Code gerado com sucesso!',
+        description: 'O código está pronto para uso e foi salvo no banco.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Não foi possível persistir o cadastro no Supabase.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleDownload = () => {
     if (!qrRef.current) return;
-    
+
     const svg = qrRef.current.querySelector('svg');
     if (!svg) return;
 
@@ -222,7 +317,7 @@ export default function Cadastro() {
     };
 
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
-    
+
     toast({
       title: 'Download iniciado',
       description: 'O QR Code está sendo baixado.',
@@ -262,7 +357,7 @@ export default function Cadastro() {
           <div class="info">
             <h2>${selectedBus?.plate}</h2>
             <p><strong>Motorista:</strong> ${selectedDriver?.name}</p>
-            <p><strong>Ônibus:</strong> ${selectedBus?.number}</p>
+            <p><strong>Ônibus:</strong> ${selectedBus ? selectedBus.bus_number : 'N/A'}</p>
             <p><strong>Rota:</strong> ${selectedRoute?.name}</p>
           </div>
         </body>
@@ -275,10 +370,10 @@ export default function Cadastro() {
 
   const handleCopy = async () => {
     if (!generatedQR) return;
-    
+
     await navigator.clipboard.writeText(generatedQR);
     setCopied(true);
-    
+
     toast({
       title: 'Copiado!',
       description: 'Dados do QR Code copiados para a área de transferência.',
@@ -290,6 +385,7 @@ export default function Cadastro() {
   const handleReset = () => {
     setFormData({ driverId: '', busId: '', routeId: '', location: '' });
     setGeneratedQR(null);
+    setViewingSpecificReg(null);
   };
 
   return (
@@ -360,7 +456,7 @@ export default function Cadastro() {
                   <SelectValue placeholder="Selecione o motorista" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockDrivers.map((driver) => (
+                  {drivers.map((driver) => (
                     <SelectItem key={driver.id} value={driver.id}>
                       {driver.name}
                     </SelectItem>
@@ -383,7 +479,7 @@ export default function Cadastro() {
                   <SelectValue placeholder="Selecione o ônibus" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockBuses.map((bus) => (
+                  {buses.map((bus) => (
                     <SelectItem key={bus.id} value={bus.id}>
                       {bus.number} - {bus.plate}
                     </SelectItem>
@@ -406,7 +502,7 @@ export default function Cadastro() {
                   <SelectValue placeholder="Selecione a rota" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockRoutes.map((route) => (
+                  {routes.map((route) => (
                     <SelectItem key={route.id} value={route.id}>
                       {route.code} - {route.name}
                     </SelectItem>
@@ -476,24 +572,32 @@ export default function Cadastro() {
               <div className="space-y-3 p-4 bg-accent/50 rounded-lg">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Motorista</span>
-                  <span className="font-medium text-foreground">{selectedDriver?.name}</span>
+                  <span className="font-medium text-foreground">
+                    {viewingSpecificReg ? viewingSpecificReg.driverName : selectedDriver?.name}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Ônibus</span>
-                  <span className="font-medium text-foreground">{selectedBus?.number}</span>
+                  <span className="font-medium text-foreground">
+                    {viewingSpecificReg ? viewingSpecificReg.busNumber : selectedBus?.bus_number}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Placa</span>
-                  <span className="font-medium text-primary">{selectedBus?.plate}</span>
+                  <span className="font-medium text-primary">
+                    {viewingSpecificReg ? viewingSpecificReg.busPlate : selectedBus?.plate}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Rota</span>
-                  <span className="font-medium text-foreground">{selectedRoute?.code}</span>
+                  <span className="font-medium text-foreground">
+                    {viewingSpecificReg ? viewingSpecificReg.routeName : selectedRoute?.code}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Localização</span>
                   <span className="font-medium text-foreground truncate max-w-[150px]">
-                    {formData.location}
+                    {viewingSpecificReg ? viewingSpecificReg.location : formData.location}
                   </span>
                 </div>
               </div>
@@ -541,21 +645,32 @@ export default function Cadastro() {
                 <th className="text-left py-3 px-4 text-muted-foreground font-medium">ID</th>
                 <th className="text-left py-3 px-4 text-muted-foreground font-medium">Motorista</th>
                 <th className="text-left py-3 px-4 text-muted-foreground font-medium">Ônibus</th>
-                <th className="text-left py-3 px-4 text-muted-foreground font-medium">Placa</th>
                 <th className="text-left py-3 px-4 text-muted-foreground font-medium">Rota</th>
                 <th className="text-left py-3 px-4 text-muted-foreground font-medium">Data</th>
+                <th className="text-right py-3 px-4 text-muted-foreground font-medium">Ações</th>
               </tr>
             </thead>
             <tbody>
-              {mockRegistrations.map((reg) => (
+              {registrations.map((reg) => (
                 <tr key={reg.id} className="border-b border-border/50 hover:bg-accent/50 transition-colors">
-                  <td className="py-3 px-4 font-mono text-primary">{reg.id}</td>
+                  <td className="py-3 px-4 font-mono text-primary truncate max-w-[100px]">{reg.id}</td>
                   <td className="py-3 px-4 text-foreground">{reg.driverName}</td>
                   <td className="py-3 px-4 text-foreground">{reg.busNumber}</td>
                   <td className="py-3 px-4 text-foreground">{reg.busPlate}</td>
                   <td className="py-3 px-4 text-foreground">{reg.routeName}</td>
                   <td className="py-3 px-4 text-muted-foreground">
                     {format(reg.createdAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-primary hover:text-primary hover:bg-primary/10"
+                      onClick={() => handleSelectRegistration(reg)}
+                    >
+                      <QrCode className="w-4 h-4 mr-1" />
+                      Ver QR
+                    </Button>
                   </td>
                 </tr>
               ))}

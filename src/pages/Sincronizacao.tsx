@@ -15,19 +15,55 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { mockSyncReadings, mockDrivers, mockBuses } from '@/data/mockData';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
+import { useEffect } from 'react';
+import { SyncReading } from '@/types/transport';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
 
 export default function Sincronizacao() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedDriver, setSelectedDriver] = useState<string>('all');
   const [selectedBus, setSelectedBus] = useState<string>('all');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [allReadings, setAllReadings] = useState<SyncReading[]>([]);
+  const [drivers, setDrivers] = useState<string[]>([]);
+  const [buses, setBuses] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchReadings();
+  }, []);
+
+  const fetchReadings = async () => {
+    setIsLoading(true);
+    const { data, error } = await supabase
+      .from('sync_readings')
+      .select('*')
+      .order('read_at', { ascending: false });
+
+    if (data) {
+      const formattedData = data.map((item: any) => ({
+        id: item.id,
+        registrationId: item.registration_id,
+        driverName: item.driver_name,
+        busNumber: item.bus_number,
+        busPlate: item.bus_plate,
+        routeName: item.route_name,
+        location: item.location,
+        readingLocation: item.reading_location,
+        readAt: new Date(item.read_at)
+      }));
+      setAllReadings(formattedData);
+      setDrivers([...new Set(formattedData.map((r: any) => r.driverName))]);
+      setBuses([...new Set(formattedData.map((r: any) => r.busNumber))]);
+    }
+    setIsLoading(false);
+  };
 
   const filteredReadings = useMemo(() => {
-    return mockSyncReadings.filter((reading) => {
+    return allReadings.filter((reading) => {
       // Date filter
       if (selectedDate) {
         const readingDate = reading.readAt;
@@ -51,10 +87,10 @@ export default function Sincronizacao() {
 
       return true;
     });
-  }, [selectedDate, selectedDriver, selectedBus]);
+  }, [allReadings, selectedDate, selectedDriver, selectedBus]);
 
-  const uniqueDrivers = [...new Set(mockSyncReadings.map((r) => r.driverName))];
-  const uniqueBuses = [...new Set(mockSyncReadings.map((r) => r.busNumber))];
+  const uniqueDrivers = drivers;
+  const uniqueBuses = buses;
 
   const clearFilters = () => {
     setSelectedDate(undefined);
