@@ -14,6 +14,29 @@ const QRScanner = () => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const qrCodeRef = useRef<Html5Qrcode | null>(null);
 
+  // Função para tocar o som de "pip" (Beep)
+  const playBeep = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Frequência do bipe
+      gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.01);
+      gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.2);
+    } catch (e) {
+      console.warn("Não foi possível tocar o som de feedback", e);
+    }
+  };
+
   useEffect(() => {
     qrCodeRef.current = new Html5Qrcode("reader");
 
@@ -31,18 +54,15 @@ const QRScanner = () => {
       setIsScanning(true);
       setHasPermission(true);
 
-      // Determinar o tamanho ideal do qrbox baseado na largura da tela
-      // Queremos cobrir cerca de 70% da largura da tela, com um mínimo de 250px
       const width = window.innerWidth;
       const qrboxSize = Math.max(250, Math.floor(width * 0.7));
 
       await qrCodeRef.current.start(
         { facingMode: "environment" },
         {
-          fps: 20, // Aumentado para 20fps para maior fluidez
+          fps: 20,
           qrbox: { width: qrboxSize, height: qrboxSize },
           aspectRatio: 1.0,
-          // Desabilitar animações internas do html5-qrcode para ganho de performance
         },
         onScanSuccess,
         onScanFailure
@@ -53,9 +73,9 @@ const QRScanner = () => {
       const errorStr = String(error);
       if (errorStr.includes("NotAllowedError") || errorStr.includes("Permission denied")) {
         setHasPermission(false);
-        toast.error("Permissão de câmera negada. Verifique as configurações do navegador.");
+        toast.error("Permissão de câmera negada.");
       } else {
-        toast.error("Erro ao acessar a câmera. Tente recarregar a página.");
+        toast.error("Erro ao acessar a câmera.");
       }
     }
   };
@@ -74,8 +94,9 @@ const QRScanner = () => {
   async function onScanSuccess(decodedText: string) {
     console.log(`Scan result: ${decodedText}`);
 
+    playBeep(); // Tocar o som IMEDIATAMENTE após a leitura
     await stopScanner();
-    toast.success("Código lido com sucesso!");
+    toast.success("Código lido!");
 
     try {
       let qrData;
@@ -83,7 +104,7 @@ const QRScanner = () => {
         qrData = JSON.parse(decodedText);
       } catch (e) {
         console.error("QR Code não contém um JSON válido", e);
-        toast.error("QR Code inválido (formato incompatível)");
+        toast.error("Formato de QR Code incompatível.");
         startScanner();
         return;
       }
@@ -112,15 +133,13 @@ const QRScanner = () => {
         read_at: new Date().toISOString()
       });
 
-      toast.success("Leitura registrada!");
-
       setTimeout(() => {
         navigate('/');
-      }, 1000);
+      }, 800);
 
     } catch (error) {
       console.error("Erro ao processar scan:", error);
-      toast.error("Erro ao salvar a leitura");
+      toast.error("Erro ao salvar leitura.");
       startScanner();
     }
   }
@@ -157,7 +176,6 @@ const QRScanner = () => {
           </div>
 
           <div className="relative w-full max-w-[340px] aspect-square bg-gray-900 rounded-3xl border-2 border-primary/30 overflow-hidden shadow-2xl">
-            {/* Container do Scanner */}
             <div id="reader" className="w-full h-full" />
 
             {!isScanning && (
@@ -168,10 +186,9 @@ const QRScanner = () => {
                       <Icon name="block" size={32} className="text-red-500" />
                     </div>
                     <p className="text-white font-medium mb-2">Acesso à câmera negado</p>
-                    <p className="text-gray-400 text-xs mb-8">Habilite o acesso nas configurações do Safari/Chrome/Samsung Internet.</p>
                     <button
                       onClick={() => window.location.reload()}
-                      className="w-full py-4 bg-white/10 text-white rounded-xl font-bold border border-white/20 active:bg-white/20"
+                      className="w-full py-4 bg-white/10 text-white rounded-xl font-bold border border-white/20"
                     >
                       Recarregar Página
                     </button>
@@ -195,16 +212,11 @@ const QRScanner = () => {
 
             {isScanning && (
               <div className="absolute inset-0 pointer-events-none z-20">
-                {/* Linha de Scanner mais expressiva */}
                 <div className="absolute left-4 right-4 h-[2px] bg-primary shadow-[0_0_20px_#FCD535] animate-scan-vertical z-30" />
-
-                {/* Cantos Maiores e mais Brilhantes */}
                 <div className="absolute top-6 left-6 w-12 h-12 border-l-[6px] border-t-[6px] border-primary rounded-tl-lg shadow-[-2px_-2px_10px_rgba(252,213,53,0.4)]" />
                 <div className="absolute top-6 right-6 w-12 h-12 border-r-[6px] border-t-[6px] border-primary rounded-tr-lg shadow-[2px_-2px_10px_rgba(252,213,53,0.4)]" />
                 <div className="absolute bottom-6 left-6 w-12 h-12 border-l-[6px] border-b-[6px] border-primary rounded-bl-lg shadow-[-2px_2px_10px_rgba(252,213,53,0.4)]" />
                 <div className="absolute bottom-6 right-6 w-12 h-12 border-r-[6px] border-b-[6px] border-primary rounded-br-lg shadow-[2px_2px_10px_rgba(252,213,53,0.4)]" />
-
-                {/* Overlay Escuro Fora do QRBox (Simulado) */}
                 <div className="absolute inset-0 border-[40px] border-black/40" />
               </div>
             )}
@@ -213,7 +225,7 @@ const QRScanner = () => {
           {isScanning && (
             <button
               onClick={stopScanner}
-              className="mt-10 px-8 py-3 bg-red-500/20 text-red-500 rounded-full border border-red-500/40 text-sm font-bold active:bg-red-500/40 transition-colors"
+              className="mt-10 px-8 py-3 bg-red-500/20 text-red-500 rounded-full border border-red-500/40 text-sm font-bold"
             >
               CANCELAR
             </button>
