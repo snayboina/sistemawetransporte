@@ -304,18 +304,23 @@ const QRScanner = () => {
 
       // CENÁRIO 2: Busca por PLACA (só placa digitada)
       else if (manualId.trim() && !manualDriver.trim()) {
-        // Normaliza placa: remove hífen e espaços
-        const normalizedPlate = manualId.trim().toUpperCase().replace(/[-\s]/g, '');
+        let searchTerm = manualId.trim().toUpperCase();
 
-        // Busca o ônibus pela placa normalizada
+        // Se for 3 letras e 4 números sem hífen, adiciona o hífen para buscar no banco
+        // Ex: ABC1234 -> ABC-1234
+        if (/^[A-Z]{3}\d{4}$/.test(searchTerm)) {
+          searchTerm = searchTerm.replace(/^([A-Z]{3})(\d{4})$/, '$1-$2');
+        }
+
+        // Busca o ônibus pela placa formatada ou número
         const { data: busData, error: busError } = await supabase
           .from('buses')
           .select('id, plate, bus_number')
-          .or(`plate.ilike.%${normalizedPlate}%,bus_number.eq.${manualId}`)
+          .or(`plate.ilike.%${searchTerm}%,bus_number.eq.${manualId},plate.ilike.%${manualId}%`) // Tenta c/ hífen, nº, ou original
           .maybeSingle();
 
         if (busError || !busData) {
-          toast.error("Ônibus não encontrado no sistema.", { id: 'manual-look' });
+          toast.error(`Ônibus "${manualId}" não encontrado. Tente a placa completa (ex: ABC-1234) ou número.`, { id: 'manual-look' });
           setIsSaving(false);
           return;
         }
@@ -341,16 +346,19 @@ const QRScanner = () => {
 
       // CENÁRIO 3: Busca por AMBOS (placa + motorista)
       else if (manualId.trim() && manualDriver.trim()) {
-        const normalizedPlate = manualId.trim().toUpperCase().replace(/[-\s]/g, '');
+        let searchTerm = manualId.trim().toUpperCase();
+        if (/^[A-Z]{3}\d{4}$/.test(searchTerm)) {
+          searchTerm = searchTerm.replace(/^([A-Z]{3})(\d{4})$/, '$1-$2');
+        }
 
         const { data: busData, error: busError } = await supabase
           .from('buses')
           .select('id, plate, bus_number')
-          .or(`plate.ilike.%${normalizedPlate}%,bus_number.eq.${manualId}`)
+          .or(`plate.ilike.%${searchTerm}%,bus_number.eq.${manualId},plate.ilike.%${manualId}%`)
           .maybeSingle();
 
         if (busError || !busData) {
-          toast.error("Ônibus não encontrado no sistema.", { id: 'manual-look' });
+          toast.error(`Ônibus "${manualId}" não encontrado.`, { id: 'manual-look' });
           setIsSaving(false);
           return;
         }
