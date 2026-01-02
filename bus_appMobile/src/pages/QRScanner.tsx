@@ -98,14 +98,15 @@ const QRScanner = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const width = window.innerWidth;
-      const qrboxSize = Math.max(250, Math.floor(width * 0.7));
+      const qrboxSize = Math.min(width * 0.8, 300); // Ajustado para ser proporcional e não ultrapassar 300px
 
       await qrCodeRef.current.start(
         { facingMode: "environment" },
         {
-          fps: 15, // Reduzido para maior estabilidade em dispositivos lentos
+          fps: 25, // Aumentado de 15 para 25 para leitura mais fluida
           qrbox: { width: qrboxSize, height: qrboxSize },
           aspectRatio: 1.0,
+          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE] // Foca apenas em QR para maior precisão
         },
         onScanSuccess,
         onScanFailure
