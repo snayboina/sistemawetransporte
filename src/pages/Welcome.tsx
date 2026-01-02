@@ -116,7 +116,7 @@ export default function Welcome() {
             <div className="relative z-10 animate-in fade-in slide-in-from-right duration-700 delay-200">
               <div className="relative rounded-[2.5rem] overflow-hidden bg-gray-900 shadow-2xl border-4 border-gray-100 dark:border-gray-800 group">
                 <img
-                  src="https://res.cloudinary.com/duyb5dsw0/image/upload/v1767318372024/mockup_bus_yellow.png" // Placeholder or User's Image
+                  src="https://res.cloudinary.com/duyb5dsw0/image/upload/v1767289139/Gemini_Generated_Image_zaf06jzaf06jzaf0_pjyox1.png"
                   alt="App Dashboard Preview"
                   className="w-full h-auto object-cover opacity-90 group-hover:scale-105 transition-transform duration-700"
                 />
