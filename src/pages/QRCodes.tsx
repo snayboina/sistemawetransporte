@@ -53,7 +53,7 @@ export default function QRCodes() {
           canvas.width = 300;
           canvas.height = 300;
           if (ctx) {
-            ctx.fillStyle = '#1E2329';
+            ctx.fillStyle = isPrintMode ? '#FFFFFF' : '#1E242B';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 25, 25, 250, 250);
           }
@@ -114,31 +114,35 @@ export default function QRCodes() {
               flex-direction: column;
               align-items: center;
               padding: 20px;
-              border: 1px solid #ddd;
+              border: ${isPrintMode ? '2px solid #000' : '1px solid #ddd'};
               border-radius: 8px;
               page-break-inside: avoid;
+              background-color: #fff;
             }
             .qr-item svg {
-              width: 150px;
-              height: 150px;
+              width: 200px;
+              height: 200px;
             }
             .info {
               text-align: center;
               margin-top: 10px;
+              color: #000;
             }
             .info h3 {
               margin: 0 0 5px;
-              font-size: 14px;
+              font-size: 18px;
+              font-weight: bold;
             }
             .info p {
               margin: 3px 0;
-              font-size: 11px;
-              color: #666;
+              font-size: 12px;
+              color: ${isPrintMode ? '#000' : '#666'};
             }
             @media print {
               .container {
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(2, 1fr);
               }
+              body { padding: 0; }
             }
           </style>
         </head>
