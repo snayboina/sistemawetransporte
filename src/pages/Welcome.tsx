@@ -85,41 +85,32 @@ export default function Welcome() {
               </div>
             </div>
 
-            {/* Right Column - Large Fixed Image */}
+            {/* Right Column - Large Floating Image (No Frame) */}
             <div className="relative order-1 md:order-2 animate-in fade-in zoom-in duration-1000 delay-200 flex justify-center py-10">
-              {/* Intensified Background Glows */}
-              <div className="absolute -inset-20 bg-[#FCD535]/20 blur-[130px] rounded-full opacity-50"></div>
-              <div className="absolute -inset-10 bg-blue-500/10 blur-[100px] rounded-full opacity-30"></div>
 
-              <div className="relative w-full">
-                {/* Single Image Container */}
-                <div className="relative rounded-[2rem] md:rounded-[3.5rem] overflow-hidden border border-white/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.9)] bg-[#1a1f2e] w-full group">
-                  <div className="relative w-full aspect-[16/10] md:aspect-[4/3] lg:aspect-[16/10]">
-                    <img
-                      src="https://res.cloudinary.com/duyb5dsw0/image/upload/v1767289139/Gemini_Generated_Image_zaf06jzaf06jzaf0_pjyox1.png"
-                      alt="SwiftRide Dashboard Preview"
-                      className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
-                    />
+              {/* Image Container - Expanded & Frameless */}
+              <div className="relative w-full flex justify-center items-center">
+                <img
+                  src="https://res.cloudinary.com/duyb5dsw0/image/upload/v1767289139/Gemini_Generated_Image_zaf06jzaf06jzaf0_pjyox1.png"
+                  alt="SwiftRide Dashboard Interface"
+                  className="w-full h-auto object-contain transform scale-125 drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)] z-10"
+                />
+              </div>
 
-                    {/* Premium Glass Overlay */}
-                    <div className="absolute inset-0 border-[8px] md:border-[16px] border-white/5 pointer-events-none z-20"></div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-20 pointer-events-none"></div>
-                  </div>
+              {/* Back Glow Effect (Behind Image) */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-[#FCD535]/10 blur-[100px] rounded-full -z-10 pointer-events-none"></div>
+
+              {/* Floating Stat Card - Integrated into floating layout */}
+              <div className="absolute -bottom-10 -right-0 md:-right-10 bg-[#252b3b]/90 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hidden xl:flex items-center gap-4 animate-bounce-slow z-20">
+                <div className="w-14 h-14 bg-[#FCD535] rounded-full flex items-center justify-center text-black font-black text-xl shadow-[0_0_25px_rgba(252,213,53,0.5)]">
+                  99%
+                </div>
+                <div>
+                  <div className="text-white font-extrabold text-lg">uptime</div>
+                  <div className="text-sm text-gray-400 font-medium">Operação 24/7 Ativa</div>
                 </div>
               </div>
 
-              {/* Floating Stat Card */}
-              <div className="absolute -bottom-6 -right-6 bg-[#252b3b]/95 backdrop-blur-2xl p-6 rounded-[2rem] border border-white/10 shadow-3xl hidden xl:block animate-bounce-slow z-40">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-[#FCD535] rounded-full flex items-center justify-center text-black font-black text-xl shadow-[0_0_25px_rgba(252,213,53,0.5)]">
-                    99%
-                  </div>
-                  <div>
-                    <div className="text-white font-extrabold text-lg">uptime</div>
-                    <div className="text-sm text-gray-400 font-medium">Operação 24/7 Ativa</div>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* End Right Column */}
