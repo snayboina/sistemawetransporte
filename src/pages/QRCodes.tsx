@@ -24,6 +24,7 @@ export default function QRCodes() {
   const [isSaving, setIsSaving] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
   const [saveStats, setSaveStats] = useState({ inserted: 0, duplicates: 0, errors: 0 });
+  const [isPrintMode, setIsPrintMode] = useState(false);
 
   const generateQRData = (reg: Registration) => {
     return reg.qrCodeData || JSON.stringify({
@@ -385,6 +386,19 @@ export default function QRCodes() {
         </div>
       </div>
 
+      <div className="flex items-center gap-2 px-4 py-2 bg-accent/30 rounded-lg border border-border w-fit">
+        <label className="text-sm font-medium text-foreground cursor-pointer flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={isPrintMode}
+            onChange={(e) => setIsPrintMode(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+          />
+          Modo de Impressão (Alto Contraste / P&B)
+        </label>
+        <span className="text-[10px] text-muted-foreground bg-accent px-1.5 py-0.5 rounded">RECOMENDADO PARA IMPRIMIR</span>
+      </div>
+
       {/* QR Codes Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {registrations.map((reg) => (
@@ -400,8 +414,8 @@ export default function QRCodes() {
                 value={generateQRData(reg)}
                 size={150}
                 level="H"
-                bgColor="#1E2329"
-                fgColor="#FCD535"
+                bgColor={isPrintMode ? "#FFFFFF" : "#1E2329"}
+                fgColor={isPrintMode ? "#000000" : "#FCD535"}
               />
             </div>
             <div className="text-center space-y-1 w-full">
