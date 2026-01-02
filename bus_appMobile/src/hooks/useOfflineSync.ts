@@ -53,6 +53,7 @@ export const useOfflineSync = () => {
         }
     };
 
+
     const saveReading = async (reading: Omit<PendingReading, 'id'>) => {
         const newReading = {
             ...reading,
@@ -63,16 +64,27 @@ export const useOfflineSync = () => {
         if (isOnline) {
             try {
                 const { error } = await supabase.from('readings').insert([newReading]);
-                if (error) throw error;
+                if (error) {
+                    console.error('Supabase insert error:', error);
+                    throw error;
+                }
                 toast({ title: 'Leitura enviada!', description: 'Sincronizado com sucesso.' });
-            } catch (err) {
+            } catch (err: any) {
                 console.error('Error syncing reading:', err);
+                const errorMsg = err?.message || err?.error_description || 'Erro desconhecido';
+                toast({
+                    title: 'Erro na sincronização',
+                    description: `Falha ao enviar: ${errorMsg}. Salvo localmente.`,
+                    variant: 'destructive',
+                    duration: 5000
+                });
                 storeLocally(newReading);
             }
         } else {
             storeLocally(newReading);
         }
     };
+
 
     const storeLocally = (reading: PendingReading) => {
         const stored = localStorage.getItem(STORAGE_KEY);
