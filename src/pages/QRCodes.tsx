@@ -294,10 +294,10 @@ export default function QRCodes() {
 
       setRegistrations(updatedRegistrations);
 
-      if (stats.inserted > 0) {
+      if (stats.inserted > 0 || stats.duplicates > 0) {
         toast({
-          title: 'Sucesso!',
-          description: `${stats.inserted} registros enviados ao banco de dados.`,
+          title: stats.inserted > 0 ? 'Processamento concluído' : 'Nada novo para enviar',
+          description: `${stats.inserted} registros novos enviados, ${stats.duplicates} duplicados ignorados.`,
         });
       }
 
