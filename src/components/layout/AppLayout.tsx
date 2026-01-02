@@ -1,10 +1,12 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { Outlet } from 'react-router-dom';
-import { Bell, User } from 'lucide-react';
+import { Bell, User, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export function AppLayout() {
+  const { theme, setTheme } = useTheme();
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
@@ -26,6 +28,14 @@ export function AppLayout() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-foreground mr-1"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              >
+                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </Button>
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                 <Bell className="w-5 h-5" />
               </Button>
