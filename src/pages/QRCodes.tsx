@@ -170,7 +170,14 @@ export default function QRCodes() {
         if (!driverId) {
           const { data, error } = await supabase.from('drivers').insert([{ name: reg.driverName }]).select().single();
           if (error) {
-            errors.push(`Driver: ${reg.driverName}`); continue;
+            console.error('Erro ao cadastrar motorista:', error);
+            errors.push(`Motorista: ${reg.driverName} - ${error.message}`);
+            toast({
+              title: 'Erro ao cadastrar motorista',
+              description: `Não foi possível cadastrar ${reg.driverName}: ${error.message}`,
+              variant: 'destructive',
+            });
+            continue;
           }
           driverId = data.id;
           driverMap.set(reg.driverName.toUpperCase(), driverId);
@@ -181,7 +188,11 @@ export default function QRCodes() {
         let busId = busMap.get(normalizedPlate);
         if (!busId) {
           const { data, error } = await supabase.from('buses').insert([{ plate: reg.busPlate, bus_number: reg.busNumber }]).select().single();
-          if (error) { errors.push(`Bus: ${reg.busPlate}`); continue; }
+          if (error) {
+            console.error('Erro ao cadastrar ônibus:', error);
+            errors.push(`Ônibus: ${reg.busPlate} - ${error.message}`);
+            continue;
+          }
           busId = data.id;
           busMap.set(normalizedPlate, busId);
         }
@@ -190,7 +201,11 @@ export default function QRCodes() {
         let routeId = routeMap.get(reg.routeName.toUpperCase());
         if (!routeId) {
           const { data, error } = await supabase.from('routes').insert([{ name: reg.routeName }]).select().single();
-          if (error) { errors.push(`Route: ${reg.routeName}`); continue; }
+          if (error) {
+            console.error('Erro ao cadastrar rota:', error);
+            errors.push(`Rota: ${reg.routeName} - ${error.message}`);
+            continue;
+          }
           routeId = data.id;
           routeMap.set(reg.routeName.toUpperCase(), routeId);
         }
@@ -224,7 +239,8 @@ export default function QRCodes() {
         }]).select().single();
 
         if (regError) {
-          errors.push(`Reg: ${reg.busPlate}`);
+          console.error('Erro ao cadastrar escala:', regError);
+          errors.push(`Escala: ${reg.busPlate} - ${regError.message}`);
           continue;
         }
 
@@ -261,6 +277,11 @@ export default function QRCodes() {
       }
 
       if (errors.length > 0) {
+        toast({
+          title: 'Alguns erros ocorreram',
+          description: `Falha em ${errors.length} itens. Verifique o console ou revise as permissões (RLS) no Supabase.`,
+          variant: 'destructive',
+        });
         console.error('Falhas no salvamento:', errors);
       }
 
