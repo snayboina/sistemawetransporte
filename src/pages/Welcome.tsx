@@ -113,54 +113,17 @@ export default function Welcome() {
             </div>
 
             {/* Right Image/Mockup */}
-            <div className="relative z-10 animate-in fade-in slide-in-from-right duration-700 delay-200">
-              <div className="relative rounded-[2.5rem] overflow-hidden bg-gray-900 shadow-2xl border-4 border-gray-100 dark:border-gray-800 group">
+            <div className="relative z-10 animate-in fade-in slide-in-from-right duration-700 delay-200 flex justify-center items-center">
+              <div className="relative w-full max-w-2xl transform scale-110 md:scale-125 transition-transform duration-700 hover:scale-[1.3]">
                 <img
                   src="https://res.cloudinary.com/duyb5dsw0/image/upload/v1767289139/Gemini_Generated_Image_zaf06jzaf06jzaf0_pjyox1.png"
                   alt="App Dashboard Preview"
-                  className="w-full h-auto object-cover opacity-90 group-hover:scale-105 transition-transform duration-700"
+                  className="w-full h-auto object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
                 />
-
-                {/* Floating Card 1 */}
-                <div className="absolute top-8 right-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-white/20 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                    <div className="w-5 h-5 rounded-full bg-green-500 border-4 border-green-100"></div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 uppercase font-bold">System Status</div>
-                    <div className="text-gray-900 dark:text-white font-bold">99.9% Uptime</div>
-                  </div>
-                </div>
-
-                {/* Floating Card 2 */}
-                <div className="absolute bottom-8 left-8 bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-xl max-w-xs border border-gray-100 dark:border-gray-700">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-md flex items-center gap-1">
-                      <span className="w-2 h-2 bg-green-500 rounded-full"></span> Ativo
-                    </span>
-                    <Bus className="w-5 h-5 text-gray-400" />
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">ABC-1234</div>
-                  <div className="text-xs text-gray-500 mb-4">Ônibus Urbano • Mercedes-Benz</div>
-
-                  <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-[#FCD535]/20 rounded-lg text-[#F0B90B] font-bold">
-                      #
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-gray-500 uppercase font-bold">TAG ID</div>
-                      <div className="font-mono font-bold text-gray-900 dark:text-white">987654321</div>
-                    </div>
-                  </div>
-
-                  <button className="w-full py-3 bg-[#FCD535] hover:bg-[#F0B90B] text-black font-bold rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
-                    Nova Leitura
-                  </button>
-                </div>
               </div>
 
               {/* Decorative blobs */}
-              <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-blue-100 to-[#FCD535]/20 dark:from-blue-900/20 dark:to-[#FCD535]/10 blur-[100px] rounded-full opacity-60"></div>
+              <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-gradient-to-tr from-blue-100 to-[#FCD535]/30 dark:from-blue-900/20 dark:to-[#FCD535]/20 blur-[120px] rounded-full opacity-60 pointer-events-none"></div>
             </div>
 
           </div>
