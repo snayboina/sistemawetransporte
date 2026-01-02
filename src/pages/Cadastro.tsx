@@ -189,23 +189,32 @@ export default function Cadastro() {
       // Create registrations
       const newRegistrations: Registration[] = jsonData.map((row, index) => {
         const id = `REG-${Date.now()}-${index}`;
+
+        // Normalize data
+        const normalizedPlate = row.Placa?.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || '';
+        const driverFirstName = row.Motorista?.split(' ')[0].toUpperCase() || '';
+        const normalizedDriverName = row.Motorista?.toUpperCase() || '';
+        const normalizedRouteName = row.Rota?.toUpperCase() || '';
+
         const qrData = JSON.stringify({
           id,
-          driver: row.Motorista,
+          driver: normalizedDriverName,
+          driverBrief: driverFirstName,
           bus: row.Onibus,
-          plate: row.Placa,
-          route: row.Rota,
+          plate: normalizedPlate,
+          route: normalizedRouteName,
           location: row.Localizacao,
           createdAt: new Date().toISOString(),
         });
+
         return {
           id,
           driverId: `DRV-${index}`,
-          driverName: row.Motorista,
+          driverName: normalizedDriverName,
           busNumber: row.Onibus,
-          busPlate: row.Placa,
+          busPlate: normalizedPlate,
           routeId: `RT-${index}`,
-          routeName: row.Rota,
+          routeName: normalizedRouteName,
           location: row.Localizacao,
           createdAt: new Date(),
           qrCodeData: qrData,
@@ -245,12 +254,19 @@ export default function Cadastro() {
       return;
     }
 
+    // Normalize data for individual registration
+    const normalizedPlate = selectedBus?.plate.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || '';
+    const driverFirstName = selectedDriver?.name.split(' ')[0].toUpperCase() || '';
+    const normalizedDriverName = selectedDriver?.name.toUpperCase() || '';
+    const normalizedRouteName = selectedRoute?.name.toUpperCase() || '';
+
     const qrData = JSON.stringify({
       id: `TRP-${Date.now()}`,
-      driver: selectedDriver?.name,
+      driver: normalizedDriverName,
+      driverBrief: driverFirstName,
       bus: selectedBus?.bus_number,
-      plate: selectedBus?.plate,
-      route: selectedRoute?.name,
+      plate: normalizedPlate,
+      route: normalizedRouteName,
       routeCode: selectedRoute?.code,
       location: formData.location,
       createdAt: new Date().toISOString(),
