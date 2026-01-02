@@ -253,9 +253,17 @@ export default function QRCodes() {
 
         if (regError) {
           console.error('Erro ao cadastrar escala:', regError);
-          errors.push(`Escala: ${reg.busPlate} - ${regError.message}`);
+          const errorMsg = `${regError.message} ${regError.details || ''} ${regError.hint || ''}`;
+          errors.push(`Escala: ${reg.busPlate} - ${errorMsg}`);
+          toast({
+            title: 'Erro ao cadastrar escala',
+            description: `Ônibus ${reg.busPlate}: ${errorMsg}`,
+            variant: 'destructive',
+          });
           continue;
         }
+
+        if (!newReg) continue;
 
         // 4. Update QR Code Data with real DB id
         const finalQRData = JSON.stringify({
