@@ -71,6 +71,13 @@ export const useOfflineSync = () => {
                 toast({ title: 'Leitura enviada!', description: 'Sincronizado com sucesso.' });
             } catch (err: any) {
                 console.error('Error syncing reading:', err);
+                console.log('=== ERRO DE SINCRONIZAÇÃO ===');
+                console.log('Mensagem:', err?.message || 'Sem mensagem');
+                console.log('Código:', err?.code || 'Sem código');
+                console.log('Detalhes:', err?.details || 'Sem detalhes');
+                console.log('Hint:', err?.hint || 'Sem hint');
+                console.log('=============================');
+
                 const errorMsg = err?.message || err?.error_description || 'Erro desconhecido';
                 toast({
                     title: 'Erro na sincronização',
