@@ -27,94 +27,62 @@ export default function Welcome() {
         </div>
       </header>
 
-      {/* Hero Section - Two Columns */}
+      {/* Hero Section - Centered & Typography Focused */}
       <div className="relative min-h-screen flex items-center justify-center px-6 pt-32 pb-20 overflow-hidden">
-        {/* Decorative Background Elements */}
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-[#FCD535]/10 blur-[120px] rounded-full"></div>
-        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-blue-500/10 blur-[120px] rounded-full"></div>
+        {/* Animated Background Grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none"></div>
 
-        <div className="max-w-7xl mx-auto w-full relative z-10">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
+        {/* Glow Effects */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-96 bg-[#FCD535]/10 blur-[120px] rounded-full pointer-events-none"></div>
 
-            {/* Left Column - Information */}
-            <div className="text-left order-2 md:order-1 animate-in fade-in slide-in-from-left duration-1000">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#FCD535]/10 border border-[#FCD535]/20 rounded-full mb-8 backdrop-blur-md">
-                <div className="w-2 h-2 bg-[#FCD535] rounded-full animate-pulse shadow-[0_0_8px_#FCD535]"></div>
-                <span className="text-[#FCD535] font-medium text-sm tracking-wide uppercase">Sistema em tempo real</span>
-              </div>
+        <div className="max-w-5xl mx-auto w-full relative z-10 text-center">
 
-              <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-8 leading-[1.1] tracking-tight">
-                Gestão Total
-                <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FCD535] to-[#F0B90B]">Otimizada</span>
-              </h1>
-
-              <p className="text-xl text-gray-400 mb-10 leading-relaxed max-w-xl">
-                Controle sua frota com precisão cirúrgica. Monitore operações, automatize
-                escalas e visualize dados em tempo real com nossa interface de alta performance.
-              </p>
-
-              {/* Features List with Glassmorphism */}
-              <div className="grid gap-4 mb-10">
-                {[
-                  { icon: Users, text: "Controle de Passageiros" },
-                  { icon: BarChart3, text: "Analytics em Tempo Real" },
-                  { icon: Shield, text: "Segurança de Dados ponta a ponta" }
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-4 p-3 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm hover:bg-white/10 transition-colors group">
-                    <div className="w-10 h-10 bg-[#2a3142] rounded-lg flex items-center justify-center border border-gray-700 group-hover:border-[#FCD535]/50 transition-colors">
-                      <item.icon className="w-5 h-5 text-[#FCD535]" />
-                    </div>
-                    <span className="text-gray-300 font-medium">{item.text}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* CTA Buttons */}
-              <div className="flex flex-wrap gap-5">
-                <button
-                  onClick={() => navigate('/app')}
-                  className="px-10 py-5 bg-[#FCD535] text-black rounded-2xl font-black text-lg hover:bg-[#F0B90B] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center gap-3 shadow-[0_20px_40px_-15px_rgba(252,213,53,0.3)]"
-                >
-                  ACESSAR AGORA
-                  <ArrowRight className="w-6 h-6" />
-                </button>
-                <button className="px-10 py-5 bg-[#1f2535] border border-gray-700 text-white rounded-2xl font-bold text-lg hover:bg-[#2a3142] transition-all backdrop-blur-md">
-                  EXPLORAR
-                </button>
-              </div>
-            </div>
-
-            {/* Right Column - Large Floating Image (No Frame) */}
-            <div className="relative order-1 md:order-2 animate-in fade-in zoom-in duration-1000 delay-200 flex justify-center py-10">
-
-              {/* Image Container - Expanded & Frameless */}
-              <div className="relative w-full flex justify-center items-center">
-                <img
-                  src="https://res.cloudinary.com/duyb5dsw0/image/upload/v1767289139/Gemini_Generated_Image_zaf06jzaf06jzaf0_pjyox1.png"
-                  alt="SwiftRide Dashboard Interface"
-                  className="w-full h-auto object-contain transform scale-125 drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)] z-10"
-                />
-              </div>
-
-              {/* Back Glow Effect (Behind Image) */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-[#FCD535]/10 blur-[100px] rounded-full -z-10 pointer-events-none"></div>
-
-              {/* Floating Stat Card - Integrated into floating layout */}
-              <div className="absolute -bottom-10 -right-0 md:-right-10 bg-[#252b3b]/90 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hidden xl:flex items-center gap-4 animate-bounce-slow z-20">
-                <div className="w-14 h-14 bg-[#FCD535] rounded-full flex items-center justify-center text-black font-black text-xl shadow-[0_0_25px_rgba(252,213,53,0.5)]">
-                  99%
-                </div>
-                <div>
-                  <div className="text-white font-extrabold text-lg">uptime</div>
-                  <div className="text-sm text-gray-400 font-medium">Operação 24/7 Ativa</div>
-                </div>
-              </div>
-
-            </div>
-
-            {/* End Right Column */}
+          <div className="inline-flex items-center gap-2 px-6 py-2 bg-[#FCD535]/10 border border-[#FCD535]/20 rounded-full mb-10 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <div className="w-2 h-2 bg-[#FCD535] rounded-full animate-pulse shadow-[0_0_8px_#FCD535]"></div>
+            <span className="text-[#FCD535] font-semibold text-sm tracking-wide uppercase">Sistema de Gestão 4.0</span>
           </div>
+
+          <h1 className="text-6xl md:text-8xl font-black text-white mb-8 leading-[1.0] tracking-tight animate-in fade-in zoom-in duration-1000 delay-100">
+            Gestão Total
+            <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FCD535] via-[#fff] to-[#FCD535] bg-300% animate-gradient">Otimizada</span>
+          </h1>
+
+          <p className="text-xl md:text-2xl text-gray-400 mb-12 leading-relaxed max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+            Controle sua frota com precisão cirúrgica. Monitore operações, automatize
+            escalas e visualize dados em tempo real.
+          </p>
+
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+            <button
+              onClick={() => navigate('/app')}
+              className="px-12 py-6 bg-[#FCD535] text-black rounded-2xl font-black text-xl hover:bg-[#F0B90B] transition-all transform hover:scale-105 active:scale-95 flex items-center gap-3 shadow-[0_0_40px_-10px_rgba(252,213,53,0.4)]"
+            >
+              ACESSAR DASHBOARD
+              <ArrowRight className="w-6 h-6" />
+            </button>
+            <button className="px-12 py-6 bg-[#1f2535] border border-gray-700 text-white rounded-2xl font-bold text-xl hover:bg-[#2a3142] transition-all backdrop-blur-md hover:border-gray-500">
+              CONHECER RECURSOS
+            </button>
+          </div>
+
+          {/* Floating Features Grid */}
+          <div className="grid md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-500">
+            {[
+              { icon: Users, text: "Controle de Passageiros", sub: "Monitoramento Ativo" },
+              { icon: BarChart3, text: "Analytics em Tempo Real", sub: "Dados Precisos" },
+              { icon: Shield, text: "Segurança de Dados", sub: "Criptografia Ponta a Ponta" }
+            ].map((item, i) => (
+              <div key={i} className="flex flex-col items-center p-6 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-sm hover:bg-white/10 transition-all hover:border-[#FCD535]/30 group cursor-default">
+                <div className="w-12 h-12 bg-[#2a3142] rounded-xl flex items-center justify-center border border-gray-700 mb-4 group-hover:scale-110 transition-transform duration-300 group-hover:border-[#FCD535]">
+                  <item.icon className="w-6 h-6 text-[#FCD535]" />
+                </div>
+                <span className="text-white font-bold text-lg mb-1">{item.text}</span>
+                <span className="text-gray-500 text-sm">{item.sub}</span>
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
 
