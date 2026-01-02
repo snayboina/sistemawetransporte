@@ -24,6 +24,9 @@ const QRScanner = () => {
   const [manualId, setManualId] = useState('');
   const [manualDriver, setManualDriver] = useState('');
   const [isDivergent, setIsDivergent] = useState(false);
+  const [registrationsList, setRegistrationsList] = useState<any[]>([]);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<any[]>([]);
+  const [isSearchingPlates, setIsSearchingPlates] = useState(false);
 
   const qrCodeRef = useRef<Html5Qrcode | null>(null);
 
@@ -57,6 +60,38 @@ const QRScanner = () => {
   };
 
   // Efeito removido pois foi mesclado acima no useEffect do autoSend
+
+  useEffect(() => {
+    const fetchRegistrations = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('registrations')
+          .select('*, drivers(name), buses(bus_number, plate), routes(name)')
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          setRegistrationsList(data);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar lista de placas:", err);
+      }
+    };
+
+    fetchRegistrations();
+  }, []);
+
+  useEffect(() => {
+    if (manualId.trim().length >= 2) {
+      const search = manualId.toUpperCase();
+      const filtered = registrationsList.filter(reg =>
+        (reg.buses?.plate?.toUpperCase().includes(search)) ||
+        (reg.buses?.bus_number?.toString().includes(search))
+      ).slice(0, 5);
+      setFilteredSuggestions(filtered);
+    } else {
+      setFilteredSuggestions([]);
+    }
+  }, [manualId, registrationsList]);
 
   useEffect(() => {
     return () => {
@@ -396,12 +431,13 @@ const QRScanner = () => {
 
       // Monta os dados para o preview
       if (registrationData) {
+        const manualRealDriver = (document.getElementById('manual-real-driver') as HTMLInputElement)?.value;
         const qrData = {
           id: registrationData.id,
           bus: registrationData.buses?.bus_number,
           plate: registrationData.buses?.plate,
           driver: registrationData.drivers?.name,
-          manualDriverName: manualDriver.trim() || registrationData.drivers?.name,
+          manualDriverName: isDivergent ? manualRealDriver : (manualDriver.trim() || registrationData.drivers?.name),
           route: registrationData.routes?.name,
           location: registrationData.location || '0,0'
         };
@@ -543,28 +579,85 @@ const QRScanner = () => {
 
               <form onSubmit={handleManualSubmit} className="space-y-6">
                 <div className="space-y-4">
-                  <div className="space-y-2 text-left">
+                  <div className="space-y-2 text-left relative">
                     <label className="text-[10px] text-gray-400 uppercase font-black ml-1 tracking-wider">Ônibus (Placa ou ID)</label>
                     <input
                       type="text"
                       value={manualId}
-                      onChange={(e) => setManualId(e.target.value)}
+                      onChange={(e) => {
+                        setManualId(e.target.value);
+                        setIsSearchingPlates(true);
+                      }}
+                      onFocus={() => setIsSearchingPlates(true)}
                       placeholder="Ex: ABC1234"
                       className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-white font-black text-center text-xl focus:border-primary/50 focus:bg-white/10 focus:outline-none transition-all placeholder:text-gray-700"
                       autoFocus
                     />
+
+                    {/* Plate Suggestions Dropdown */}
+                    {isSearchingPlates && filteredSuggestions.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-2 bg-[#1a1f2e] border border-white/10 rounded-2xl overflow-hidden z-[60] shadow-2xl">
+                        {filteredSuggestions.map((reg) => (
+                          <button
+                            key={reg.id}
+                            type="button"
+                            onClick={() => {
+                              setManualId(reg.buses?.plate || reg.buses?.bus_number?.toString() || '');
+                              setManualDriver(reg.drivers?.name || '');
+                              setIsSearchingPlates(false);
+                            }}
+                            className="w-full px-5 py-4 text-left hover:bg-white/5 border-b border-white/5 flex items-center justify-between transition-colors"
+                          >
+                            <div>
+                              <p className="text-white font-black">{reg.buses?.plate}</p>
+                              <p className="text-[10px] text-gray-500 uppercase font-bold">{reg.drivers?.name}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-primary font-bold text-xs">#{reg.buses?.bus_number}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="space-y-2 text-left">
-                    <label className="text-[10px] text-gray-400 uppercase font-black ml-1 tracking-wider">Nome do Motorista (Opcional)</label>
-                    <input
-                      type="text"
-                      value={manualDriver}
-                      onChange={(e) => setManualDriver(e.target.value)}
-                      placeholder="Nome do motorista"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-white font-bold text-center text-lg focus:border-primary/50 focus:bg-white/10 focus:outline-none transition-all placeholder:text-gray-700"
-                    />
-                  </div>
+                  {manualId && (
+                    <div className="space-y-4 animate-scale-in">
+                      <div className="space-y-2 text-left">
+                        <label className="text-[10px] text-gray-400 uppercase font-black ml-1 tracking-wider">Motorista Cadastrado</label>
+                        <div className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-gray-400 font-bold text-center text-lg">
+                          {manualDriver || 'Nenhum motorista encontrado'}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 cursor-pointer" onClick={() => setIsDivergent(!isDivergent)}>
+                        <input
+                          type="checkbox"
+                          checked={isDivergent}
+                          onChange={(e) => setIsDivergent(e.target.checked)}
+                          className="w-5 h-5 accent-amber-500 rounded border-gray-300 focus:ring-amber-500"
+                        />
+                        <span className="text-xs text-amber-400 font-bold uppercase tracking-wider">Motorista diferente hoje?</span>
+                      </div>
+
+                      {isDivergent && (
+                        <div className="space-y-2 text-left animate-scale-in">
+                          <label className="text-[10px] text-amber-400 uppercase font-black ml-1 tracking-wider">Nome do Motorista Atual</label>
+                          <input
+                            type="text"
+                            placeholder="Quem está dirigindo agora?"
+                            className="w-full bg-amber-500/5 border border-amber-500/20 rounded-2xl py-4 px-5 text-white font-bold text-center text-lg focus:border-amber-500/50 focus:bg-amber-500/10 focus:outline-none transition-all placeholder:text-gray-700"
+                            required={isDivergent}
+                            onChange={(e) => {
+                              // Adicionaremos um campo para o nome real se necessário no preview
+                              // Por enquanto usamos o previewData para isso
+                            }}
+                            id="manual-real-driver"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-3 pt-4">
