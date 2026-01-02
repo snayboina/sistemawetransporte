@@ -224,20 +224,24 @@ export default function QRCodes() {
         }
 
         // 2. Duplicate Check: Same driver + same bus in active registrations
-        const { data: existingReg } = await supabase
+        const { data: existingReg, error: checkError } = await supabase
           .from('registrations')
-          .select('*, drivers(name), buses(plate)')
+          .select('id')
           .eq('driver_id', driverId)
           .eq('bus_id', busId)
           .eq('status', 'active')
           .maybeSingle();
+
+        if (checkError) {
+          console.error('Erro na checagem de duplicados:', checkError);
+        }
 
         if (existingReg) {
           stats.duplicates++;
           toast({
             title: 'Cadastro já existe',
             description: `Motorista ${reg.driverName} e ônibus ${reg.busPlate} já cadastrados.`,
-            variant: 'destructive',
+            variant: 'default',
           });
           continue;
         }
