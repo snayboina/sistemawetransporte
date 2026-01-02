@@ -122,7 +122,10 @@ const QRScanner = () => {
 
       // Cria a instância se não existir, mas NÃO a apaga no stop
       if (!qrCodeRef.current) {
-        qrCodeRef.current = new Html5Qrcode("reader");
+        qrCodeRef.current = new Html5Qrcode("reader", {
+          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+          verbose: false
+        });
         console.log("Nova instância Html5Qrcode persistente criada.");
       }
 
@@ -140,8 +143,7 @@ const QRScanner = () => {
         {
           fps: 25, // Aumentado de 15 para 25 para leitura mais fluida
           qrbox: { width: qrboxSize, height: qrboxSize },
-          aspectRatio: 1.0,
-          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE] // Foca apenas em QR para maior precisão
+          aspectRatio: 1.0
         },
         onScanSuccess,
         onScanFailure
@@ -233,7 +235,7 @@ const QRScanner = () => {
       }
 
       await saveReading({
-        registration_id: registration?.id || qrData.id || qrData.registrationId || crypto.randomUUID(),
+        registration_id: (registration?.id || qrData.id || qrData.registrationId) ? (registration?.id || qrData.id || qrData.registrationId) : null,
         driver_name: qrData.manualDriverName || registration?.drivers?.name || qrData.driver || qrData.driverName || 'N/A',
         bus_number: registration?.buses?.bus_number || qrData.bus || qrData.busNumber || 'N/A',
         bus_plate: registration?.buses?.plate || qrData.plate || qrData.busPlate || 'N/A',

@@ -39,7 +39,7 @@ export default function Sincronizacao() {
   const fetchReadings = async () => {
     setIsLoading(true);
     const { data, error } = await supabase
-      .from('sync_readings')
+      .from('readings')
       .select('*')
       .order('read_at', { ascending: false });
 

@@ -29,8 +29,8 @@ export default function Dashboard() {
       supabase.from('buses').select('id', { count: 'exact' }),
       supabase.from('drivers').select('id', { count: 'exact' }),
       supabase.from('routes').select('id', { count: 'exact' }),
-      supabase.from('sync_readings').select('id', { count: 'exact' }).gte('read_at', start).lte('read_at', end),
-      supabase.from('sync_readings').select('*').order('read_at', { ascending: false }).limit(5)
+      supabase.from('readings').select('id', { count: 'exact' }).gte('read_at', start).lte('read_at', end),
+      supabase.from('readings').select('*').order('read_at', { ascending: false }).limit(5)
     ]);
 
     setStats({

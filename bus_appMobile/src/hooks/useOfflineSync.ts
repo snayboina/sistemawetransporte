@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface PendingReading {
     id: string;
-    registration_id: string;
+    registration_id: string | null;
     driver_name: string;
     bus_number: string;
     bus_plate: string;
