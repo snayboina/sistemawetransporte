@@ -379,7 +379,16 @@ export default function QRCodes() {
             <Printer className="w-4 h-4 mr-2" />
             Imprimir Todos
           </Button>
-          <Button onClick={handleSaveToSupabase} disabled={isSaving}>
+          <Button
+            onClick={handleSaveToSupabase}
+            disabled={isSaving}
+            className={cn(
+              "font-bold transition-all duration-500",
+              saveStats.inserted === 0 && registrations.length > 0 && !isSaving
+                ? "bg-primary text-black hover:bg-primary/90 scale-105 shadow-[0_0_20px_rgba(252,213,53,0.4)] animate-pulse"
+                : ""
+            )}
+          >
             {isSaving ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (

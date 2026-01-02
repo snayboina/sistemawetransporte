@@ -223,11 +223,14 @@ export default function Cadastro() {
 
       toast({
         title: 'Importação concluída!',
-        description: `${newRegistrations.length} cadastros importados com sucesso.`,
+        description: `${newRegistrations.length} cadastros preparados. Agora você precisa salvá-los no banco na próxima tela.`,
+        duration: 3000,
       });
 
       // Navigate to QR Codes page with the registrations
-      navigate('/qrcodes', { state: { registrations: newRegistrations } });
+      setTimeout(() => {
+        navigate('/qrcodes', { state: { registrations: newRegistrations } });
+      }, 500);
     } catch (error) {
       toast({
         title: 'Erro na importação',
