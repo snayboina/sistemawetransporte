@@ -127,15 +127,6 @@ export default function Welcome() {
                   className="w-full h-auto object-contain drop-shadow-2xl rounded-2xl border border-gray-800/50"
                 />
 
-                {/* Mobile Mockup Overlap */}
-                <div className="absolute -bottom-10 -right-10 w-[45%] z-20 animate-in slide-in-from-right-10 duration-1000 delay-300">
-                  <img
-                    src="/mobile-mockup.png"
-                    alt="Mobile App Preview"
-                    className="w-full h-auto drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-
                 {/* Floating Overlay Card Example (Optional - based on image visual) */}
                 <div className="absolute bottom-10 left-[-20px] bg-[#1a1f2e]/90 backdrop-blur-md p-4 rounded-xl border border-gray-700 shadow-2xl animate-in slide-in-from-bottom-4 duration-1000 delay-500">
                   <div className="flex items-center gap-3">
