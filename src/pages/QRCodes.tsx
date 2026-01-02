@@ -83,7 +83,7 @@ export default function QRCodes() {
       `;
     }).join('');
 
-    printWindow.document.write(\`
+    printWindow.document.write(`
       <html>
         <head>
           <title>QR Codes - Transporte</title>
@@ -132,11 +132,11 @@ export default function QRCodes() {
         </head>
         <body>
           <div class="container">
-            \${qrCodesHtml}
+            ${qrCodesHtml}
           </div>
         </body>
       </html>
-    \`);
+    `);
 
     printWindow.document.close();
     setTimeout(() => printWindow.print(), 500);
@@ -164,12 +164,14 @@ export default function QRCodes() {
 
       for (let i = 0; i < updatedRegistrations.length; i++) {
         const reg = updatedRegistrations[i];
-        
+
         // Resolve Driver
         let driverId = driverMap.get(reg.driverName.toUpperCase());
         if (!driverId) {
           const { data, error } = await supabase.from('drivers').insert([{ name: reg.driverName }]).select().single();
-          if (error) { errors.push(\`Driver: \${reg.driverName}\`); continue; }
+          if (error) {
+            errors.push(`Driver: ${reg.driverName}`); continue;
+          }
           driverId = data.id;
           driverMap.set(reg.driverName.toUpperCase(), driverId);
         }
@@ -179,7 +181,7 @@ export default function QRCodes() {
         let busId = busMap.get(normalizedPlate);
         if (!busId) {
           const { data, error } = await supabase.from('buses').insert([{ plate: reg.busPlate, bus_number: reg.busNumber }]).select().single();
-          if (error) { errors.push(\`Bus: \${reg.busPlate}\`); continue; }
+          if (error) { errors.push(`Bus: ${reg.busPlate}`); continue; }
           busId = data.id;
           busMap.set(normalizedPlate, busId);
         }
@@ -188,7 +190,7 @@ export default function QRCodes() {
         let routeId = routeMap.get(reg.routeName.toUpperCase());
         if (!routeId) {
           const { data, error } = await supabase.from('routes').insert([{ name: reg.routeName }]).select().single();
-          if (error) { errors.push(\`Route: \${reg.routeName}\`); continue; }
+          if (error) { errors.push(`Route: ${reg.routeName}`); continue; }
           routeId = data.id;
           routeMap.set(reg.routeName.toUpperCase(), routeId);
         }
@@ -206,7 +208,7 @@ export default function QRCodes() {
           stats.duplicates++;
           toast({
             title: 'Cadastro já existe',
-            description: \`Motorista \${reg.driverName} e ônibus \${reg.busPlate} já cadastrados.\`,
+            description: `Motorista ${reg.driverName} e ônibus ${reg.busPlate} já cadastrados.`,
             variant: 'destructive',
           });
           continue;
@@ -222,7 +224,7 @@ export default function QRCodes() {
         }]).select().single();
 
         if (regError) {
-          errors.push(\`Reg: \${reg.busPlate}\`);
+          errors.push(`Reg: ${reg.busPlate}`);
           continue;
         }
 
@@ -254,7 +256,7 @@ export default function QRCodes() {
       if (stats.inserted > 0) {
         toast({
           title: 'Sucesso!',
-          description: \`\${stats.inserted} registros enviados ao banco de dados.\`,
+          description: `${stats.inserted} registros enviados ao banco de dados.`,
         });
       }
 
@@ -340,7 +342,7 @@ export default function QRCodes() {
             className="bg-card rounded-xl border border-border p-6 flex flex-col items-center"
           >
             <div
-              id={\`qr-\${reg.id}\`}
+              id={`qr-${reg.id}`}
               className="p-4 bg-accent rounded-xl border-2 border-primary/20 mb-4"
             >
               <QRCodeSVG
