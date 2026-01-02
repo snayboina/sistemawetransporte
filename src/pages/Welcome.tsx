@@ -64,7 +64,7 @@ export default function Welcome() {
               </div>
 
               <h1 className="text-6xl md:text-7xl font-extrabold text-white mb-6 leading-[1.1] tracking-tight">
-                Gestão Total
+                Contagem
                 <br />
                 <span className="text-[#FCD535]">Otimizada</span>
               </h1>
