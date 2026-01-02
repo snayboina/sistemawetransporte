@@ -4,7 +4,7 @@ import "./index.css";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
 createRoot(document.getElementById("root")!).render(
-    <ThemeProvider defaultTheme="light" storageKey="swiftride-ui-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="swiftride-ui-theme">
         <App />
     </ThemeProvider>
 );
