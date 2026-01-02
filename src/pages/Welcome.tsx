@@ -1,23 +1,8 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bus, Users, BarChart3, Shield, ArrowRight } from 'lucide-react';
 
 export default function Welcome() {
   const navigate = useNavigate();
-  const [activeSlide, setActiveSlide] = useState(0);
-
-  const slides = [
-    "https://res.cloudinary.com/duyb5dsw0/image/upload/v1767237854/Gemini_Generated_Image_3kt7qt3kt7qt3kt7_msjgde.png",
-    "https://res.cloudinary.com/duyb5dsw0/image/upload/v1767231739/Captura_de_tela_2025-12-31_214027_oufs7j.png",
-    "https://res.cloudinary.com/duyb5dsw0/image/upload/v1767289139/Gemini_Generated_Image_zaf06jzaf06jzaf0_pjyox1.png"
-  ];
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
 
   return (
     <div className="min-h-screen bg-[#1a1f2e]">
@@ -100,47 +85,30 @@ export default function Welcome() {
               </div>
             </div>
 
-            {/* Right Column - Large Flat Carousel */}
+            {/* Right Column - Large Fixed Image */}
             <div className="relative order-1 md:order-2 animate-in fade-in zoom-in duration-1000 delay-200 flex justify-center py-10">
               {/* Intensified Background Glows */}
               <div className="absolute -inset-20 bg-[#FCD535]/20 blur-[130px] rounded-full opacity-50"></div>
               <div className="absolute -inset-10 bg-blue-500/10 blur-[100px] rounded-full opacity-30"></div>
 
               <div className="relative w-full">
-                {/* Carousel Container - Large & Flat */}
-                <div className="relative rounded-[2rem] md:rounded-[3.5rem] overflow-hidden border border-white/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.9)] bg-[#1a1f2e] w-full">
+                {/* Single Image Container */}
+                <div className="relative rounded-[2rem] md:rounded-[3.5rem] overflow-hidden border border-white/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.9)] bg-[#1a1f2e] w-full group">
                   <div className="relative w-full aspect-[16/10] md:aspect-[4/3] lg:aspect-[16/10]">
-                    {slides.map((url, idx) => (
-                      <div
-                        key={idx}
-                        className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${idx === activeSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
-                      >
-                        <img
-                          src={url}
-                          alt={`SwiftRide View ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
+                    <img
+                      src="https://res.cloudinary.com/duyb5dsw0/image/upload/v1767289139/Gemini_Generated_Image_zaf06jzaf06jzaf0_pjyox1.png"
+                      alt="SwiftRide Dashboard Preview"
+                      className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
+                    />
+
                     {/* Premium Glass Overlay */}
                     <div className="absolute inset-0 border-[8px] md:border-[16px] border-white/5 pointer-events-none z-20"></div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-20 pointer-events-none"></div>
                   </div>
                 </div>
-
-                {/* Carousel Indicators - Refined */}
-                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-4 z-30">
-                  {slides.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setActiveSlide(i)}
-                      className={`h-2 rounded-full transition-all duration-500 ${i === activeSlide ? 'bg-[#FCD535] w-12' : 'bg-white/20 w-4 hover:bg-white/40'}`}
-                    />
-                  ))}
-                </div>
               </div>
 
-              {/* Floating Stat Card - Repositioned for Flat Layout */}
+              {/* Floating Stat Card */}
               <div className="absolute -bottom-6 -right-6 bg-[#252b3b]/95 backdrop-blur-2xl p-6 rounded-[2rem] border border-white/10 shadow-3xl hidden xl:block animate-bounce-slow z-40">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-[#FCD535] rounded-full flex items-center justify-center text-black font-black text-xl shadow-[0_0_25px_rgba(252,213,53,0.5)]">
@@ -154,6 +122,7 @@ export default function Welcome() {
               </div>
             </div>
 
+            {/* End Right Column */}
           </div>
         </div>
       </div>
@@ -194,7 +163,7 @@ export default function Welcome() {
             </div>
           ))}
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
