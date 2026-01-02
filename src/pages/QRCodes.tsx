@@ -6,6 +6,15 @@ import { useToast } from '@/hooks/use-toast';
 import { Registration, Driver, Bus as BusType, Route as TransportRoute } from '@/types/transport';
 import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { CheckCircle2, AlertCircle, Info, XCircle } from 'lucide-react';
 
 export default function QRCodes() {
   const location = useLocation();
@@ -13,6 +22,8 @@ export default function QRCodes() {
   const { toast } = useToast();
   const [registrations, setRegistrations] = useState<Registration[]>(location.state?.registrations || []);
   const [isSaving, setIsSaving] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [saveStats, setSaveStats] = useState({ inserted: 0, duplicates: 0, errors: 0 });
 
   const generateQRData = (reg: Registration) => {
     return reg.qrCodeData || JSON.stringify({
@@ -293,20 +304,14 @@ export default function QRCodes() {
       }
 
       setRegistrations(updatedRegistrations);
-
-      if (stats.inserted > 0 || stats.duplicates > 0) {
-        toast({
-          title: stats.inserted > 0 ? 'Processamento concluído' : 'Nada novo para enviar',
-          description: `${stats.inserted} registros novos enviados, ${stats.duplicates} duplicados ignorados.`,
-        });
-      }
+      setSaveStats({
+        inserted: stats.inserted,
+        duplicates: stats.duplicates,
+        errors: errors.length
+      });
+      setShowResultModal(true);
 
       if (errors.length > 0) {
-        toast({
-          title: 'Alguns erros ocorreram',
-          description: `Falha em ${errors.length} itens. Verifique o console ou revise as permissões (RLS) no Supabase.`,
-          variant: 'destructive',
-        });
         console.error('Falhas no salvamento:', errors);
       }
 
@@ -408,6 +413,58 @@ export default function QRCodes() {
           </div>
         ))}
       </div>
+
+      {/* Result Modal */}
+      <Dialog open={showResultModal} onOpenChange={setShowResultModal}>
+        <DialogContent className="sm:max-w-md bg-card border-primary/20">
+          <DialogHeader className="flex flex-col items-center gap-2">
+            <div className={`p-3 rounded-full ${saveStats.inserted > 0 ? 'bg-primary/20 text-primary' : 'bg-accent text-muted-foreground'}`}>
+              {saveStats.inserted > 0 ? <CheckCircle2 className="w-10 h-10" /> : <Info className="w-10 h-10" />}
+            </div>
+            <DialogTitle className="text-2xl font-bold text-center">
+              {saveStats.inserted > 0 ? 'Sincronização Concluída' : 'Processamento Finalizado'}
+            </DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground">
+              Os dados foram processados e validados contra o banco de dados.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-accent/50 p-4 rounded-xl border border-border flex flex-col items-center">
+                <span className="text-2xl font-bold text-primary">{saveStats.inserted}</span>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Novos</span>
+              </div>
+              <div className="bg-accent/50 p-4 rounded-xl border border-border flex flex-col items-center">
+                <span className="text-2xl font-bold text-foreground">{saveStats.duplicates}</span>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Duplicados</span>
+              </div>
+            </div>
+
+            {saveStats.errors > 0 && (
+              <div className="bg-destructive/10 p-3 rounded-lg flex items-center gap-3 text-destructive border border-destructive/20">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <p className="text-sm">Houveram {saveStats.errors} erros durante o processo. Veja o console para detalhes.</p>
+              </div>
+            )}
+
+            <div className="bg-primary/5 p-3 rounded-lg border border-primary/10">
+              <p className="text-xs text-center text-muted-foreground">
+                Motoristas e ônibus foram automaticamente vinculados ou criados conforme necessário.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="sm:justify-center">
+            <Button
+              className="w-full sm:w-32 bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
+              onClick={() => setShowResultModal(false)}
+            >
+              ENTENDIDO
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
