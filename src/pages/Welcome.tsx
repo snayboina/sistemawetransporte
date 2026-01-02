@@ -122,7 +122,7 @@ export default function Welcome() {
               <div className="relative w-full max-w-2xl transform transition-transform duration-700 hover:scale-[1.02]">
                 {/* Custom Mockup Image from User */}
                 <img
-                  src="https://res.cloudinary.com/duyb5dsw0/image/upload/v1767320578402/uploaded_image_1767320578402.png"
+                  src="https://res.cloudinary.com/duyb5dsw0/image/upload/v1767289139/Gemini_Generated_Image_zaf06jzaf06jzaf0_pjyox1.png"
                   alt="App Dashboard Preview"
                   className="w-full h-auto object-contain drop-shadow-2xl rounded-2xl border border-gray-800/50"
                 />
