@@ -148,15 +148,28 @@ export default function QRCodes() {
 
     try {
       // 1. Get all existing drivers, buses and routes for resolution
-      const [{ data: drivers }, { data: buses }, { data: routes }] = await Promise.all([
+      const [driversRes, busesRes, routesRes] = await Promise.all([
         supabase.from('drivers').select('*'),
         supabase.from('buses').select('*'),
         supabase.from('routes').select('*'),
       ]);
 
-      const driverMap = new Map(drivers?.map(d => [d.name.toUpperCase(), d.id]));
-      const busMap = new Map(buses?.map(b => [(b.plate || '').toUpperCase().replace(/[^A-Z0-9]/g, ''), b.id]));
-      const routeMap = new Map(routes?.map(r => [r.name.toUpperCase(), r.id]));
+      if (driversRes.error) {
+        console.error('Erro ao buscar motoristas:', driversRes.error);
+        toast({ title: 'Erro de Conexão', description: `Não foi possível acessar a tabela 'drivers': ${driversRes.error.message}`, variant: 'destructive' });
+        setIsSaving(false);
+        return;
+      }
+      if (busesRes.error) {
+        console.error('Erro ao buscar ônibus:', busesRes.error);
+        toast({ title: 'Erro de Conexão', description: `Não foi possível acessar a tabela 'buses': ${busesRes.error.message}`, variant: 'destructive' });
+        setIsSaving(false);
+        return;
+      }
+
+      const driverMap = new Map(driversRes.data?.map(d => [d.name.toUpperCase(), d.id]) || []);
+      const busMap = new Map(busesRes.data?.map(b => [(b.plate || '').toUpperCase().replace(/[^A-Z0-9]/g, ''), b.id]) || []);
+      const routeMap = new Map(routesRes.data?.map(r => [r.name.toUpperCase(), r.id]) || []);
 
       const updatedRegistrations = [...registrations];
       const errors: string[] = [];
