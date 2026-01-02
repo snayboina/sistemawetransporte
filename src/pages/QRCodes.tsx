@@ -1,15 +1,18 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { Download, Printer, ArrowLeft, QrCode } from 'lucide-react';
+import { Download, Printer, ArrowLeft, QrCode, CloudUpload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Registration } from '@/types/transport';
+import { Registration, Driver, Bus as BusType, Route as TransportRoute } from '@/types/transport';
+import { supabase } from '@/lib/supabase';
+import { useState } from 'react';
 
 export default function QRCodes() {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const registrations: Registration[] = location.state?.registrations || [];
+  const [registrations, setRegistrations] = useState<Registration[]>(location.state?.registrations || []);
+  const [isSaving, setIsSaving] = useState(false);
 
   const generateQRData = (reg: Registration) => {
     return reg.qrCodeData || JSON.stringify({
@@ -80,7 +83,7 @@ export default function QRCodes() {
       `;
     }).join('');
 
-    printWindow.document.write(`
+    printWindow.document.write(\`
       <html>
         <head>
           <title>QR Codes - Transporte</title>
@@ -129,14 +132,146 @@ export default function QRCodes() {
         </head>
         <body>
           <div class="container">
-            ${qrCodesHtml}
+            \${qrCodesHtml}
           </div>
         </body>
       </html>
-    `);
+    \`);
 
     printWindow.document.close();
     setTimeout(() => printWindow.print(), 500);
+  };
+
+  const handleSaveToSupabase = async () => {
+    if (registrations.length === 0) return;
+    setIsSaving(true);
+
+    try {
+      // 1. Get all existing drivers, buses and routes for resolution
+      const [{ data: drivers }, { data: buses }, { data: routes }] = await Promise.all([
+        supabase.from('drivers').select('*'),
+        supabase.from('buses').select('*'),
+        supabase.from('routes').select('*'),
+      ]);
+
+      const driverMap = new Map(drivers?.map(d => [d.name.toUpperCase(), d.id]));
+      const busMap = new Map(buses?.map(b => [(b.plate || '').toUpperCase().replace(/[^A-Z0-9]/g, ''), b.id]));
+      const routeMap = new Map(routes?.map(r => [r.name.toUpperCase(), r.id]));
+
+      const updatedRegistrations = [...registrations];
+      const errors: string[] = [];
+      const stats = { inserted: 0, duplicates: 0 };
+
+      for (let i = 0; i < updatedRegistrations.length; i++) {
+        const reg = updatedRegistrations[i];
+        
+        // Resolve Driver
+        let driverId = driverMap.get(reg.driverName.toUpperCase());
+        if (!driverId) {
+          const { data, error } = await supabase.from('drivers').insert([{ name: reg.driverName }]).select().single();
+          if (error) { errors.push(\`Driver: \${reg.driverName}\`); continue; }
+          driverId = data.id;
+          driverMap.set(reg.driverName.toUpperCase(), driverId);
+        }
+
+        // Resolve Bus
+        const normalizedPlate = reg.busPlate.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        let busId = busMap.get(normalizedPlate);
+        if (!busId) {
+          const { data, error } = await supabase.from('buses').insert([{ plate: reg.busPlate, bus_number: reg.busNumber }]).select().single();
+          if (error) { errors.push(\`Bus: \${reg.busPlate}\`); continue; }
+          busId = data.id;
+          busMap.set(normalizedPlate, busId);
+        }
+
+        // Resolve Route
+        let routeId = routeMap.get(reg.routeName.toUpperCase());
+        if (!routeId) {
+          const { data, error } = await supabase.from('routes').insert([{ name: reg.routeName }]).select().single();
+          if (error) { errors.push(\`Route: \${reg.routeName}\`); continue; }
+          routeId = data.id;
+          routeMap.set(reg.routeName.toUpperCase(), routeId);
+        }
+
+        // 2. Duplicate Check: Same driver + same bus in active registrations
+        const { data: existingReg } = await supabase
+          .from('registrations')
+          .select('*, drivers(name), buses(plate)')
+          .eq('driver_id', driverId)
+          .eq('bus_id', busId)
+          .eq('status', 'active')
+          .maybeSingle();
+
+        if (existingReg) {
+          stats.duplicates++;
+          toast({
+            title: 'Cadastro já existe',
+            description: \`Motorista \${reg.driverName} e ônibus \${reg.busPlate} já cadastrados.\`,
+            variant: 'destructive',
+          });
+          continue;
+        }
+
+        // 3. Save Registration
+        const { data: newReg, error: regError } = await supabase.from('registrations').insert([{
+          driver_id: driverId,
+          bus_id: busId,
+          route_id: routeId,
+          location: reg.location,
+          status: 'active'
+        }]).select().single();
+
+        if (regError) {
+          errors.push(\`Reg: \${reg.busPlate}\`);
+          continue;
+        }
+
+        // 4. Update QR Code Data with real DB id
+        const finalQRData = JSON.stringify({
+          id: newReg.id,
+          driver: reg.driverName,
+          driverBrief: reg.driverName.split(' ')[0].toUpperCase(),
+          bus: reg.busNumber,
+          plate: normalizedPlate,
+          route: reg.routeName,
+          location: reg.location,
+          createdAt: newReg.created_at,
+        });
+
+        // Update in DB (for qr_code_data column)
+        await supabase.from('registrations').update({ qr_code_data: finalQRData }).eq('id', newReg.id);
+
+        updatedRegistrations[i] = {
+          ...reg,
+          id: newReg.id,
+          qrCodeData: finalQRData,
+        };
+        stats.inserted++;
+      }
+
+      setRegistrations(updatedRegistrations);
+
+      if (stats.inserted > 0) {
+        toast({
+          title: 'Sucesso!',
+          description: \`\${stats.inserted} registros enviados ao banco de dados.\`,
+        });
+      }
+
+      if (errors.length > 0) {
+        console.error('Falhas no salvamento:', errors);
+      }
+
+    } catch (error) {
+      console.error('Erro ao salvar no Supabase:', error);
+      toast({
+        title: 'Erro no salvamento',
+        description: 'Ocorreu um erro ao tentar enviar os dados ao banco.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (registrations.length === 0) {
@@ -177,14 +312,22 @@ export default function QRCodes() {
             </p>
           </div>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={handleDownloadAll}>
+        <div className="flex flex-wrap gap-3">
+          <Button variant="outline" onClick={handleDownloadAll} disabled={isSaving}>
             <Download className="w-4 h-4 mr-2" />
             Baixar Todos
           </Button>
-          <Button onClick={handlePrintAll}>
+          <Button variant="outline" onClick={handlePrintAll} disabled={isSaving}>
             <Printer className="w-4 h-4 mr-2" />
             Imprimir Todos
+          </Button>
+          <Button onClick={handleSaveToSupabase} disabled={isSaving}>
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <CloudUpload className="w-4 h-4 mr-2" />
+            )}
+            {isSaving ? 'Enviando...' : 'Enviar ao Banco de dados'}
           </Button>
         </div>
       </div>
@@ -197,7 +340,7 @@ export default function QRCodes() {
             className="bg-card rounded-xl border border-border p-6 flex flex-col items-center"
           >
             <div
-              id={`qr-${reg.id}`}
+              id={\`qr-\${reg.id}\`}
               className="p-4 bg-accent rounded-xl border-2 border-primary/20 mb-4"
             >
               <QRCodeSVG
