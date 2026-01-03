@@ -6,6 +6,15 @@ import { AlertCircle, CheckCircle2, Clock, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { useNavigate } from 'react-router-dom';
 
 interface Divergence {
     id: string;
@@ -22,6 +31,9 @@ export default function Divergencias() {
     const [divergences, setDivergences] = useState<Divergence[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [processingId, setProcessingId] = useState<string | null>(null);
+    const [errorModalOpen, setErrorModalOpen] = useState(false);
+    const [missingDriverName, setMissingDriverName] = useState('');
+    const navigate = useNavigate();
 
     const loadDivergences = async () => {
         setIsLoading(true);
@@ -65,7 +77,8 @@ export default function Divergencias() {
             if (driverError) throw driverError;
 
             if (!driverData) {
-                toast.error(`Motorista "${divergence.real_driver_name}" não encontrado no cadastro. Cadastre-o primeiro.`);
+                setMissingDriverName(divergence.real_driver_name);
+                setErrorModalOpen(true);
                 setProcessingId(null);
                 return;
             }
@@ -205,6 +218,42 @@ export default function Divergencias() {
                     ))}
                 </div>
             )}
+
+            {/* Modal de Erro Moderno */}
+            <Dialog open={errorModalOpen} onOpenChange={setErrorModalOpen}>
+                <DialogContent className="sm:max-w-md bg-[#1a1f2e]/95 backdrop-blur-2xl border-white/10 text-white rounded-[2rem] overflow-hidden shadow-[0_40px_80px_-15px_rgba(0,0,0,0.7)]">
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-500 via-amber-500 to-red-500" />
+                    <DialogHeader className="pt-6">
+                        <div className="mx-auto w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center border border-red-500/30 mb-4 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+                            <AlertCircle className="text-red-500 w-8 h-8" />
+                        </div>
+                        <DialogTitle className="text-center text-2xl font-black tracking-tight">Motorista não encontrado</DialogTitle>
+                        <DialogDescription className="text-center text-gray-400 text-base mt-2">
+                            O motorista <span className="text-white font-bold">"{missingDriverName}"</span> identificado pelo fiscal não existe no seu cadastro geral.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="bg-white/5 rounded-2xl p-5 border border-white/5 my-4">
+                        <p className="text-sm text-gray-300 leading-relaxed">
+                            Para atualizar esta escala, você precisa primeiro cadastrar este motorista no sistema. Quer fazer isso agora?
+                        </p>
+                    </div>
+                    <DialogFooter className="flex flex-col sm:flex-row gap-3 pt-2">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setErrorModalOpen(false)}
+                            className="w-full sm:flex-1 text-gray-400 hover:text-white hover:bg-white/5 py-6 rounded-xl font-bold uppercase tracking-widest text-xs"
+                        >
+                            Depois
+                        </Button>
+                        <Button
+                            onClick={() => navigate('/cadastro')}
+                            className="w-full sm:flex-1 bg-gradient-to-r from-primary to-amber-500 text-black hover:opacity-90 py-6 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg"
+                        >
+                            Ir para Cadastro
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
