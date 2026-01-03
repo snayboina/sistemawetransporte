@@ -114,7 +114,7 @@ const ReadingsHistory = () => {
                 ) : (
                     <div className="space-y-5">
                         {filteredReadings.map((reg) => (
-                            <div key={reg.id} className="bg-white/5 border border-white/5 p-5 rounded-[2rem] backdrop-blur-md hover:bg-white/10 transition-all group overflow-hidden relative">
+                            <Link to={`/bus/${reg.bus_plate}`} key={reg.id} className="bg-white/5 border border-white/5 p-5 rounded-[2rem] backdrop-blur-md hover:bg-white/10 transition-all group overflow-hidden relative block">
                                 <div className="absolute top-0 right-0 w-24 h-24 bg-[#FCD535]/5 blur-2xl rounded-full -mr-10 -mt-10 group-hover:bg-[#FCD535]/10 transition-all"></div>
 
                                 <div className="flex justify-between items-start mb-5 relative z-10">
@@ -153,7 +153,7 @@ const ReadingsHistory = () => {
                                         <p className="text-sm font-bold text-gray-200 truncate">{reg.route_name || 'N/A'}</p>
                                     </div>
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 )}
