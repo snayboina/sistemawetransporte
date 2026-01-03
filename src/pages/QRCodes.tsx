@@ -264,8 +264,9 @@ export default function QRCodes() {
           continue;
         }
 
-        // 3. Save Registration
+        // 3. Save Registration - Preservando o ID local para que o QR Code continue válido
         const { data: newReg, error: regError } = await supabase.from('registrations').insert([{
+          id: reg.id,
           driver_id: driverId,
           bus_id: busId,
           route_id: routeId,
@@ -415,6 +416,14 @@ export default function QRCodes() {
       </div>
 
       {/* QR Codes Grid */}
+      {saveStats.inserted === 0 && registrations.length > 0 && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 mb-4 flex items-center gap-3 text-amber-500">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <p className="text-sm font-medium">
+            <strong>Atenção:</strong> Os QR Codes abaixo só funcionarão no aplicativo após você clicar no botão <strong>"Enviar ao Banco de dados"</strong> acima.
+          </p>
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {registrations.map((reg) => (
           <div

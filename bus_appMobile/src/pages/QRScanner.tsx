@@ -205,9 +205,38 @@ const QRScanner = () => {
       await processAndSave(qrData, true);
     } else {
       await stopScanner();
+
+      // Se tiver apenas o ID, tentamos buscar os detalhes antes de mostrar o preview
+      if (!qrData.driver && qrData.id) {
+        toast.loading("Buscando detalhes do registro...", { id: 'fetch-details' });
+        try {
+          const { data, error } = await supabase
+            .from('registrations')
+            .select('*, drivers(name), buses(bus_number, plate), routes(name)')
+            .eq('id', qrData.id)
+            .single();
+
+          if (data && !error) {
+            qrData = {
+              ...qrData,
+              driver: data.drivers?.name,
+              bus: data.buses?.bus_number,
+              plate: data.buses?.plate,
+              route: data.routes?.name,
+              location: data.location
+            };
+            toast.success("Dados carregados!", { id: 'fetch-details' });
+          } else {
+            console.warn("Registro não encontrado no banco:", error);
+            toast.error("Atenção: Este QR Code não foi encontrado no banco de dados. Verifique se ele foi 'Enviado' no Painel Web.", { id: 'fetch-details', duration: 5000 });
+          }
+        } catch (err) {
+          console.error("Erro ao buscar detalhes:", err);
+          toast.dismiss('fetch-details');
+        }
+      }
+
       setPreviewData(qrData);
-      // Mantém isProcessingRef.current como true para evitar scans de fundo 
-      // enquanto o preview está na tela.
     }
   }
 
