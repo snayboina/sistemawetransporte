@@ -23,6 +23,8 @@ export const useOfflineSync = () => {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [pendingCount, setPendingCount] = useState(0);
 
+    const [registrationsList, setRegistrationsList] = useState<any[]>([]);
+
     useEffect(() => {
         const handleOnline = () => setIsOnline(true);
         const handleOffline = () => setIsOnline(false);
@@ -30,11 +32,13 @@ export const useOfflineSync = () => {
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
 
-        // Initial check
+        // Load cached data immediately
+        loadCachedCatalogs();
         updatePendingCount();
 
         if (isOnline) {
             syncData();
+            syncCatalogs();
         }
 
         return () => {
@@ -42,6 +46,39 @@ export const useOfflineSync = () => {
             window.removeEventListener('offline', handleOffline);
         };
     }, [isOnline]);
+
+    const loadCachedCatalogs = () => {
+        try {
+            const cached = localStorage.getItem('swiftride_catalog_registrations');
+            if (cached) {
+                setRegistrationsList(JSON.parse(cached));
+            }
+        } catch (e) {
+            console.error('Error loading cached catalogs:', e);
+        }
+    };
+
+    const syncCatalogs = async () => {
+        if (!navigator.onLine) return;
+
+        try {
+            console.log('Syncing catalogs...');
+            const { data, error } = await supabase
+                .from('registrations')
+                .select('*, drivers(name), buses(bus_number, plate), routes(name)')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            if (data) {
+                setRegistrationsList(data);
+                localStorage.setItem('swiftride_catalog_registrations', JSON.stringify(data));
+                console.log('Catalogs synced:', data.length, 'records');
+            }
+        } catch (err) {
+            console.error('Error syncing catalogs:', err);
+        }
+    };
 
     const updatePendingCount = () => {
         const stored = localStorage.getItem(STORAGE_KEY);
@@ -69,6 +106,8 @@ export const useOfflineSync = () => {
                     throw error;
                 }
                 toast({ title: 'Leitura enviada!', description: 'Sincronizado com sucesso.' });
+                // Refresh catalogs after successful read might be good to ensure we have latest, 
+                // but maybe overkill for every read. Keeping it simple.
             } catch (err: any) {
                 console.error('Error syncing reading:', err);
                 console.log('=== ERRO DE SINCRONIZAÇÃO ===');
@@ -167,5 +206,6 @@ export const useOfflineSync = () => {
         return allReadings;
     };
 
-    return { isOnline, pendingCount, saveReading, syncData, getDailyReadings };
+    return { isOnline, pendingCount, saveReading, syncData, getDailyReadings, registrationsList, syncCatalogs };
 };
+

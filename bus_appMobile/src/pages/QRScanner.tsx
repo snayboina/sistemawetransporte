@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 
 const QRScanner = () => {
   const navigate = useNavigate();
-  const { isOnline, pendingCount, saveReading } = useOfflineSync();
+  const { isOnline, pendingCount, saveReading, registrationsList, syncCatalogs } = useOfflineSync();
   const [isScanning, setIsScanning] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [autoSend, setAutoSend] = useState(() => {
@@ -24,7 +24,8 @@ const QRScanner = () => {
   const [manualId, setManualId] = useState('');
   const [manualDriver, setManualDriver] = useState('');
   const [isDivergent, setIsDivergent] = useState(false);
-  const [registrationsList, setRegistrationsList] = useState<any[]>([]);
+  // const [registrationsList, setRegistrationsList] = useState<any[]>([]); // Agora vem do hook
+
   const [filteredSuggestions, setFilteredSuggestions] = useState<any[]>([]);
   const [isSearchingPlates, setIsSearchingPlates] = useState(false);
 
@@ -61,24 +62,8 @@ const QRScanner = () => {
 
   // Efeito removido pois foi mesclado acima no useEffect do autoSend
 
-  useEffect(() => {
-    const fetchRegistrations = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('registrations')
-          .select('*, drivers(name), buses(bus_number, plate), routes(name)')
-          .order('created_at', { ascending: false });
+  // Efeito de busca de registros removido pois agora vem do useOfflineSync
 
-        if (!error && data) {
-          setRegistrationsList(data);
-        }
-      } catch (err) {
-        console.error("Erro ao carregar lista de placas:", err);
-      }
-    };
-
-    fetchRegistrations();
-  }, []);
 
   useEffect(() => {
     if (manualId.trim().length >= 2) {
@@ -222,6 +207,7 @@ const QRScanner = () => {
 
     try {
       let registration = null;
+
       if (isOnline) {
         const { data, error } = await supabase
           .from('registrations')
@@ -231,6 +217,16 @@ const QRScanner = () => {
 
         if (!error && data) {
           registration = data;
+        }
+      } else {
+        // Offline: Try to find in cached list
+        const searchId = qrData.id || qrData.registrationId;
+        if (searchId) {
+          const found = registrationsList.find(r => r.id === searchId);
+          if (found) {
+            console.log("Offline: Registration found in cache:", found);
+            registration = found;
+          }
         }
       }
 
@@ -297,7 +293,71 @@ const QRScanner = () => {
 
     // Modo Offline
     if (!isOnline) {
-      toast.success("Modo Offline: Registro manual salvo localmente.", { id: 'manual-look' });
+      // Tenta buscar nos dados em cache (registrationsList)
+      let foundRegistration = null;
+      const searchId = manualId.trim().toUpperCase();
+      const searchDriver = manualDriver.trim().toLowerCase();
+
+      // Normaliza strings para comparação (remove tudo que não for letra ou número)
+      const cleanString = (str: string) => str?.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || '';
+      const cleanSearchId = cleanString(manualId);
+
+      // Lógica de busca offline ROBUSTA
+      if (manualId.trim() && manualDriver.trim()) {
+        // Busca por AMBOS
+        foundRegistration = registrationsList.find(r => {
+          const dbPlate = cleanString(r.buses?.plate);
+          const dbBusNumber = cleanString(String(r.buses?.bus_number));
+
+          const plateMatch = dbPlate.includes(cleanSearchId) || dbBusNumber === cleanSearchId;
+          return plateMatch;
+        });
+
+        if (foundRegistration) {
+          const driverInDb = foundRegistration.drivers?.name?.toLowerCase().trim();
+          if (driverInDb && !driverInDb.includes(searchDriver) && !searchDriver.includes(driverInDb)) {
+            setIsDivergent(true);
+            toast.warning("Offline: Divergência de motorista detectada.", { id: 'manual-look' });
+          } else {
+            toast.success("Offline: Registro encontrado no cache!", { id: 'manual-look' });
+          }
+        }
+      } else if (manualId.trim()) {
+        // Busca só por PLACA (Flexível)
+        foundRegistration = registrationsList.find(r => {
+          const dbPlate = cleanString(r.buses?.plate);
+          const dbBusNumber = cleanString(String(r.buses?.bus_number));
+
+          return dbPlate.includes(cleanSearchId) || dbBusNumber === cleanSearchId;
+        });
+
+        if (foundRegistration) toast.success("Offline: Ônibus encontrado no cache!", { id: 'manual-look' });
+      } else if (manualDriver.trim()) {
+        // Busca só por MOTORISTA
+        foundRegistration = registrationsList.find(r =>
+          r.drivers?.name?.toLowerCase().includes(searchDriver)
+        );
+        if (foundRegistration) toast.success("Offline: Motorista encontrado no cache!", { id: 'manual-look' });
+      }
+
+      if (foundRegistration) {
+        const qrData = {
+          id: foundRegistration.id,
+          bus: foundRegistration.buses?.bus_number,
+          plate: foundRegistration.buses?.plate,
+          driver: foundRegistration.drivers?.name,
+          manualDriverName: isDivergent ? (document.getElementById('manual-real-driver') as HTMLInputElement)?.value || manualDriver : (manualDriver.trim() || foundRegistration.drivers?.name),
+          route: foundRegistration.routes?.name,
+          location: foundRegistration.location || '0,0'
+        };
+        setPreviewData(qrData);
+        setIsManualOpen(false);
+        setIsSaving(false);
+        return;
+      }
+
+      // Se não encontrou no cache, salva como desconhecido
+      toast.warning("Offline: Não encontrado no cache. Salvando manual.", { id: 'manual-look' });
 
       const qrData = {
         id: crypto.randomUUID(),
@@ -562,6 +622,29 @@ const QRScanner = () => {
                   <Icon name="keyboard" size={18} />
                   DIGITAR PLACA/ID
                 </button>
+
+                <div className="flex flex-col items-center gap-2 mt-4">
+                  <div className="px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 flex items-center gap-2 transition-all">
+                    <Icon name="database" size={12} className={registrationsList.length > 0 ? "text-green-400" : "text-gray-500"} />
+                    <p className="text-[10px] text-gray-300 font-bold uppercase tracking-wider">
+                      Base Offline: <span className={registrationsList.length > 0 ? "text-white" : "text-gray-500"}>{registrationsList.length}</span>
+                    </p>
+                  </div>
+
+                  {isOnline && (
+                    <button
+                      onClick={async () => {
+                        const loadingId = toast.loading("Baixando dados do servidor...");
+                        await syncCatalogs(); // Chama a função que agora está exposta
+                        toast.dismiss(loadingId);
+                        toast.success("Dados atualizados!");
+                      }}
+                      className="text-[10px] text-primary font-bold uppercase tracking-widest border-b border-primary/30 hover:text-white hover:border-white transition-colors pb-0.5"
+                    >
+                      Atualizar Base
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -795,13 +878,22 @@ const QRScanner = () => {
         {/* Footer Info */}
         <div className="p-10 text-center pb-12">
           {pendingCount > 0 && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full border border-primary/20">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full border border-primary/20 mb-2">
               <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
               <p className="text-xs text-primary font-bold uppercase tracking-widest">
-                {pendingCount} Pendente(s)
+                {pendingCount} {pendingCount === 1 ? 'Leitura Pendente' : 'Leituras Pendentes'}
               </p>
             </div>
           )}
+
+          <div className="flex flex-col items-center gap-1 mt-4">
+            <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/10 flex items-center gap-2">
+              <Icon name="database" size={14} className="text-gray-400" />
+              <p className="text-[10px] text-gray-300 font-bold uppercase tracking-wider">
+                Base Offline: <span className="text-white">{registrationsList.length}</span> registros
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
