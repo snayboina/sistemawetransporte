@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'robots.txt', 'placeholder.svg'],
+      includeAssets: ['favicon.ico', 'robots.txt', 'placeholder.svg', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'SwiftRide Mobile',
         short_name: 'SwiftRide',

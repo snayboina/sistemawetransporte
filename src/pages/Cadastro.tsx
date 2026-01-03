@@ -311,11 +311,18 @@ export default function Cadastro() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 25, 25, 250, 250);
       }
-      const pngUrl = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.href = pngUrl;
-      link.download = `qrcode-${selectedBus?.plate || 'transport'}.png`;
-      link.click();
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `qrcode-${selectedBus?.plate || 'transport'}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+      }, 'image/png');
     };
 
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
