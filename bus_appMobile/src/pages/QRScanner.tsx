@@ -271,7 +271,8 @@ const QRScanner = () => {
 
       await saveReading({
         registration_id: registration?.id || qrData.id || qrData.registrationId || null,
-        driver_name: qrData.manualDriverName || registration?.drivers?.name || qrData.driver || qrData.driverName || 'N/A',
+        // driver_name agora representa o que o BANCO esperava (ou o que está no QR original)
+        driver_name: registration?.drivers?.name || qrData.driver || qrData.driverName || qrData.manualDriverName || 'N/A',
         bus_number: registration?.buses?.bus_number || qrData.bus || qrData.busNumber || 'N/A',
         bus_plate: registration?.buses?.plate || qrData.plate || qrData.busPlate || 'N/A',
         route_name: registration?.routes?.name || qrData.route || qrData.routeName || 'N/A',
@@ -279,7 +280,8 @@ const QRScanner = () => {
         reading_location: 'Local Atual',
         read_at: new Date().toISOString(),
         has_divergence: isDivergent,
-        real_driver_name: isDivergent ? (qrData.manualDriverName || registration?.drivers?.name) : null
+        // real_driver_name agora representa o que o FISCAL digitou
+        real_driver_name: isDivergent ? (qrData.manualDriverName || registration?.drivers?.name || qrData.driver) : null
       });
 
       toast.success("Código lido e sincronizado!", { id: 'saving-scan' });
