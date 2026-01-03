@@ -490,7 +490,7 @@ export default function Cadastro() {
                 <SelectContent>
                   {buses.map((bus) => (
                     <SelectItem key={bus.id} value={bus.id}>
-                      {bus.number} - {bus.plate}
+                      {bus.bus_number} - {bus.plate}
                     </SelectItem>
                   ))}
                 </SelectContent>
