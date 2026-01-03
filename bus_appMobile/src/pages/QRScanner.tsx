@@ -662,6 +662,31 @@ const QRScanner = () => {
                 </div>
               </div>
 
+              {/* Status Offline e Atualização Manual */}
+              <div className="mb-6 flex flex-col items-center gap-2 w-full">
+                 <div className="px-3 py-2 bg-white/5 rounded-lg border border-white/10 flex items-center gap-2 transition-all w-full justify-center">
+                   <Icon name="database" size={12} className={registrationsList.length > 0 ? "text-green-400" : "text-gray-500"} />
+                   <p className="text-[10px] text-gray-300 font-bold uppercase tracking-wider">
+                     Base Offline: <span className={registrationsList.length > 0 ? "text-white" : "text-gray-500"}>{registrationsList.length}</span>
+                   </p>
+                 </div>
+                 
+                 {isOnline && (
+                   <button
+                     type="button"
+                     onClick={async () => {
+                       const loadingId = toast.loading("Baixando dados do servidor...");
+                       await syncCatalogs();
+                       toast.dismiss(loadingId);
+                       toast.success("Dados atualizados!");
+                     }}
+                     className="text-[10px] text-primary font-bold uppercase tracking-widest border-b border-primary/30 hover:text-white hover:border-white transition-colors pb-0.5"
+                   >
+                     Atualizar Base Agora
+                   </button>
+                 )}
+              </div>
+
               <form onSubmit={handleManualSubmit} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2 text-left relative">
