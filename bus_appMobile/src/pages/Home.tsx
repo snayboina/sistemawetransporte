@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Icon } from '@/components/Icon';
-import busIllustration from '@/assets/bus-illustration.png';
 
 const Home = () => {
   return (
@@ -39,7 +38,7 @@ const Home = () => {
             <div className="absolute inset-0 bg-[#FCD535]/20 blur-[60px] rounded-full animate-pulse"></div>
             <div className="w-64 h-64 relative flex items-center justify-center animate-float">
               <img
-                src={busIllustration}
+                src="https://res.cloudinary.com/duyb5dsw0/image/upload/v1767420380/onibus-escolar_uyqfx5.png"
                 alt="SwiftRide Logo"
                 className="w-full h-full object-contain filter drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
               />
