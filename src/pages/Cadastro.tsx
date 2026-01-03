@@ -196,16 +196,8 @@ export default function Cadastro() {
         const normalizedDriverName = row.Motorista?.toUpperCase() || '';
         const normalizedRouteName = row.Rota?.toUpperCase() || '';
 
-        const qrData = JSON.stringify({
-          id,
-          driver: normalizedDriverName,
-          driverBrief: driverFirstName,
-          bus: row.Onibus,
-          plate: normalizedPlate,
-          route: normalizedRouteName,
-          location: row.Localizacao,
-          createdAt: new Date().toISOString(),
-        });
+        // Usamos apenas o ID para o QR Code para máxima precisão na leitura
+        const qrData = id;
 
         return {
           id,
@@ -263,17 +255,8 @@ export default function Cadastro() {
     const normalizedDriverName = selectedDriver?.name.toUpperCase() || '';
     const normalizedRouteName = selectedRoute?.name.toUpperCase() || '';
 
-    const qrData = JSON.stringify({
-      id: `TRP-${Date.now()}`,
-      driver: normalizedDriverName,
-      driverBrief: driverFirstName,
-      bus: selectedBus?.bus_number,
-      plate: normalizedPlate,
-      route: normalizedRouteName,
-      routeCode: selectedRoute?.code,
-      location: formData.location,
-      createdAt: new Date().toISOString(),
-    });
+    // Usamos apenas o ID para o QR Code para máxima precisão na leitura
+    const qrData = `TRP-${Date.now()}`;
 
     setViewingSpecificReg(null);
     saveToSupabase(qrData);
@@ -580,7 +563,8 @@ export default function Cadastro() {
                   <QRCodeSVG
                     value={generatedQR}
                     size={200}
-                    level="H"
+                    level="M"
+                    includeMargin={true}
                     bgColor="#1E2329"
                     fgColor="#FCD535"
                   />
