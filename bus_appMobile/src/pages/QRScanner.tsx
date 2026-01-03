@@ -178,14 +178,24 @@ const QRScanner = () => {
     console.log(`Scan result: ${decodedText}`);
     playBeep();
 
-    let qrData;
+    let qrData: any = {};
     try {
+      // Tenta fazer o parse do JSON (formato antigo)
       qrData = JSON.parse(decodedText);
     } catch (e) {
-      console.error("QR Code não contém um JSON válido", e);
-      toast.error("Formato de QR Code incompatível.");
-      isProcessingRef.current = false; // Libera a trava se falhar o parse
-      return;
+      // Se falhar o parse, assume que é o novo formato (apenas o ID)
+      console.log("QR Code não é JSON, tratando como ID puro:", decodedText);
+
+      // Validação básica: IDs no banco são numéricos ou UUIDs
+      // Se não for nulo nem vazio, assumimos que é o ID da escala
+      if (decodedText && decodedText.trim().length > 0) {
+        qrData = { id: decodedText.trim() };
+      } else {
+        console.error("QR Code vazio ou inválido");
+        toast.error("QR Code inválido.");
+        isProcessingRef.current = false;
+        return;
+      }
     }
 
     const isDirectMode = autoSendRef.current; // Captura o modo no momento do scan
@@ -664,27 +674,27 @@ const QRScanner = () => {
 
               {/* Status Offline e Atualização Manual */}
               <div className="mb-6 flex flex-col items-center gap-2 w-full">
-                 <div className="px-3 py-2 bg-white/5 rounded-lg border border-white/10 flex items-center gap-2 transition-all w-full justify-center">
-                   <Icon name="database" size={12} className={registrationsList.length > 0 ? "text-green-400" : "text-gray-500"} />
-                   <p className="text-[10px] text-gray-300 font-bold uppercase tracking-wider">
-                     Base Offline: <span className={registrationsList.length > 0 ? "text-white" : "text-gray-500"}>{registrationsList.length}</span>
-                   </p>
-                 </div>
-                 
-                 {isOnline && (
-                   <button
-                     type="button"
-                     onClick={async () => {
-                       const loadingId = toast.loading("Baixando dados do servidor...");
-                       await syncCatalogs();
-                       toast.dismiss(loadingId);
-                       toast.success("Dados atualizados!");
-                     }}
-                     className="text-[10px] text-primary font-bold uppercase tracking-widest border-b border-primary/30 hover:text-white hover:border-white transition-colors pb-0.5"
-                   >
-                     Atualizar Base Agora
-                   </button>
-                 )}
+                <div className="px-3 py-2 bg-white/5 rounded-lg border border-white/10 flex items-center gap-2 transition-all w-full justify-center">
+                  <Icon name="database" size={12} className={registrationsList.length > 0 ? "text-green-400" : "text-gray-500"} />
+                  <p className="text-[10px] text-gray-300 font-bold uppercase tracking-wider">
+                    Base Offline: <span className={registrationsList.length > 0 ? "text-white" : "text-gray-500"}>{registrationsList.length}</span>
+                  </p>
+                </div>
+
+                {isOnline && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const loadingId = toast.loading("Baixando dados do servidor...");
+                      await syncCatalogs();
+                      toast.dismiss(loadingId);
+                      toast.success("Dados atualizados!");
+                    }}
+                    className="text-[10px] text-primary font-bold uppercase tracking-widest border-b border-primary/30 hover:text-white hover:border-white transition-colors pb-0.5"
+                  >
+                    Atualizar Base Agora
+                  </button>
+                )}
               </div>
 
               <form onSubmit={handleManualSubmit} className="space-y-6">

@@ -27,15 +27,9 @@ export default function QRCodes() {
   const [isPrintMode, setIsPrintMode] = useState(false);
 
   const generateQRData = (reg: Registration) => {
-    return reg.qrCodeData || JSON.stringify({
-      id: reg.id,
-      driver: reg.driverName,
-      bus: reg.busNumber,
-      plate: reg.busPlate,
-      route: reg.routeName,
-      location: reg.location,
-      createdAt: new Date(reg.createdAt).toISOString(),
-    });
+    // Para maior precisão na leitura, usamos apenas o ID. 
+    // Menos dados = QR Code mais simples e rápido de ler.
+    return reg.id.toString();
   };
 
   const handleDownloadAll = () => {
@@ -427,6 +421,7 @@ export default function QRCodes() {
                 value={generateQRData(reg)}
                 size={150}
                 level="H"
+                includeMargin={true}
                 bgColor={isPrintMode ? "#FFFFFF" : "#1E2329"}
                 fgColor={isPrintMode ? "#000000" : "#FCD535"}
               />
