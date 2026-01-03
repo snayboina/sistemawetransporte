@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { CheckCircle2, AlertCircle, Info, XCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function QRCodes() {
   const location = useLocation();
@@ -291,13 +292,13 @@ export default function QRCodes() {
           createdAt: newReg.created_at,
         });
 
-        // Update in DB (for qr_code_data column)
-        await supabase.from('registrations').update({ qr_code_data: finalQRData }).eq('id', newReg.id);
+        // Update in DB (for qr_code_data column) - We still save the ID for reference
+        await supabase.from('registrations').update({ qr_code_data: newReg.id }).eq('id', newReg.id);
 
         updatedRegistrations[i] = {
           ...reg,
           id: newReg.id,
-          qrCodeData: finalQRData,
+          qrCodeData: newReg.id, // Apenas o ID
         };
         stats.inserted++;
       }
@@ -420,7 +421,7 @@ export default function QRCodes() {
               <QRCodeSVG
                 value={generateQRData(reg)}
                 size={150}
-                level="H"
+                level="M"
                 includeMargin={true}
                 bgColor={isPrintMode ? "#FFFFFF" : "#1E2329"}
                 fgColor={isPrintMode ? "#000000" : "#FCD535"}

@@ -241,7 +241,7 @@ const QRScanner = () => {
       }
 
       await saveReading({
-        registration_id: (registration?.id || qrData.id || qrData.registrationId) ? (registration?.id || qrData.id || qrData.registrationId) : null,
+        registration_id: registration?.id || qrData.id || qrData.registrationId || null,
         driver_name: qrData.manualDriverName || registration?.drivers?.name || qrData.driver || qrData.driverName || 'N/A',
         bus_number: registration?.buses?.bus_number || qrData.bus || qrData.busNumber || 'N/A',
         bus_plate: registration?.buses?.plate || qrData.plate || qrData.busPlate || 'N/A',
@@ -250,7 +250,7 @@ const QRScanner = () => {
         reading_location: 'Local Atual',
         read_at: new Date().toISOString(),
         has_divergence: isDivergent,
-        real_driver_name: isDivergent ? qrData.manualDriverName : null
+        real_driver_name: isDivergent ? (qrData.manualDriverName || registration?.drivers?.name) : null
       });
 
       toast.success("Código lido e sincronizado!", { id: 'saving-scan' });
