@@ -256,16 +256,18 @@ export default function Cadastro() {
     const normalizedRouteName = selectedRoute?.name.toUpperCase() || '';
 
     // Usamos apenas o ID para o QR Code para máxima precisão na leitura
-    const qrData = `TRP-${Date.now()}`;
+    const newId = crypto.randomUUID();
+    const qrData = newId;
 
     setViewingSpecificReg(null);
-    saveToSupabase(qrData);
+    saveToSupabase(qrData, newId);
   };
 
-  const saveToSupabase = async (qrData: string) => {
+  const saveToSupabase = async (qrData: string, customId?: string) => {
     try {
       const { data, error } = await supabase.from('registrations').insert([
         {
+          id: customId,
           driver_id: formData.driverId,
           bus_id: formData.busId,
           route_id: formData.routeId,
