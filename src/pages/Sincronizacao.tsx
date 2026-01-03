@@ -21,6 +21,16 @@ import { useEffect } from 'react';
 import { SyncReading } from '@/types/transport';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export default function Sincronizacao() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -108,6 +118,76 @@ export default function Sincronizacao() {
     uniqueRoutes: [...new Set(filteredReadings.map((r) => r.routeName))].length,
   };
 
+  const exportToExcel = () => {
+    try {
+      const dataToExport = filteredReadings.map(reading => ({
+        'Data': format(reading.readAt, 'dd/MM/yyyy'),
+        'Hora': format(reading.readAt, 'HH:mm:ss'),
+        'Motorista': reading.driverName,
+        'Número do Ônibus': reading.busNumber,
+        'Placa': reading.busPlate,
+        'Rota': reading.routeName,
+        'Local da Leitura': reading.readingLocation,
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Leituras");
+
+      const fileName = `Relatorio_Sincronizacao_${format(new Date(), 'dd_MM_yyyy_HHmm')}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+      toast.success('Excel exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar Excel:', error);
+      toast.error('Erro ao exportar Excel');
+    }
+  };
+
+  const exportToPDF = () => {
+    try {
+      const doc = new jsPDF();
+
+      // Header
+      doc.setFontSize(18);
+      doc.text('Relatório de Sincronização - SwiftRide', 14, 22);
+
+      doc.setFontSize(11);
+      doc.setTextColor(100);
+      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 30);
+
+      if (hasActiveFilters) {
+        let filterText = 'Filtros aplicados: ';
+        if (selectedDate) filterText += `Data: ${format(selectedDate, 'dd/MM/yyyy')} `;
+        if (selectedDriver !== 'all') filterText += `Motorista: ${selectedDriver} `;
+        if (selectedBus !== 'all') filterText += `Ônibus: ${selectedBus} `;
+        doc.text(filterText, 14, 38);
+      }
+
+      const tableData = filteredReadings.map(reading => [
+        format(reading.readAt, 'dd/MM/yyyy HH:mm'),
+        reading.driverName,
+        reading.busNumber,
+        reading.busPlate,
+        reading.routeName,
+        reading.readingLocation
+      ]);
+
+      autoTable(doc, {
+        head: [['Data/Hora', 'Motorista', 'Ônibus', 'Placa', 'Rota', 'Local']],
+        body: tableData,
+        startY: hasActiveFilters ? 45 : 35,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [252, 213, 53], textColor: [0, 0, 0] } // Yellow primary color
+      });
+
+      doc.save(`Relatorio_Sincronizacao_${format(new Date(), 'dd_MM_yyyy_HHmm')}.pdf`);
+      toast.success('PDF exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast.error('Erro ao exportar PDF');
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Page Header */}
@@ -118,10 +198,23 @@ export default function Sincronizacao() {
             Visualize todas as leituras realizadas pelo app mobile
           </p>
         </div>
-        <Button variant="outline" className="gap-2">
-          <Download className="w-4 h-4" />
-          Exportar
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="gap-2 border-primary/50 hover:bg-primary/10">
+              <Download className="w-4 h-4" />
+              Exportar
+              <ChevronDown className="w-4 h-4 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[160px] bg-card border-border">
+            <DropdownMenuItem onClick={exportToExcel} className="cursor-pointer hover:bg-accent">
+              Exportar para Excel
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={exportToPDF} className="cursor-pointer hover:bg-accent">
+              Exportar para PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Stats Cards */}
