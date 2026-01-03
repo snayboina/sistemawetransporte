@@ -1,4 +1,4 @@
-import { Bus, Users, QrCode, MapPin, TrendingUp, Clock, Activity } from 'lucide-react';
+import { Bus, Users, QrCode, MapPin, TrendingUp, Clock, Activity, AlertCircle } from 'lucide-react';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -11,6 +11,7 @@ export default function Dashboard() {
     activeBuses: 0,
     activeDrivers: 0,
     todayReadings: 0,
+    divergences: 0,
     activeRoutes: 0,
     totalRoutes: 0
   });
@@ -25,11 +26,12 @@ export default function Dashboard() {
     const start = startOfDay(today).toISOString();
     const end = endOfDay(today).toISOString();
 
-    const [buses, drivers, routes, todayReadings, recent] = await Promise.all([
+    const [buses, drivers, routes, todayReadings, divergencesData, recent] = await Promise.all([
       supabase.from('buses').select('id', { count: 'exact' }),
       supabase.from('drivers').select('id', { count: 'exact' }),
       supabase.from('routes').select('id', { count: 'exact' }),
       supabase.from('readings').select('id', { count: 'exact' }).gte('read_at', start).lte('read_at', end),
+      supabase.from('readings').select('id', { count: 'exact' }).eq('has_divergence', true),
       supabase.from('readings').select('*').order('read_at', { ascending: false }).limit(5)
     ]);
 
@@ -37,7 +39,8 @@ export default function Dashboard() {
       activeBuses: buses.count || 0,
       activeDrivers: drivers.count || 0,
       todayReadings: todayReadings.count || 0,
-      activeRoutes: routes.count || 0, // Simplifying to total routes for now
+      divergences: divergencesData.count || 0,
+      activeRoutes: routes.count || 0,
       totalRoutes: routes.count || 0
     });
 
@@ -91,9 +94,11 @@ export default function Dashboard() {
           trend={{ value: 0, isPositive: true }}
         />
         <StatsCard
-          title="Rotas em Operação"
-          value={`${stats.activeRoutes}/${stats.totalRoutes || 32}`}
-          icon={MapPin}
+          title="Divergências"
+          value={stats.divergences}
+          icon={AlertCircle}
+          trend={{ value: stats.divergences > 0 ? stats.divergences : 0, isPositive: stats.divergences === 0 }}
+          className={stats.divergences > 0 ? "border-amber-500/50 bg-amber-500/5" : ""}
         />
       </div>
 
