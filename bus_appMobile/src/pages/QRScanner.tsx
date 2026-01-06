@@ -209,30 +209,50 @@ const QRScanner = () => {
       // Se tiver apenas o ID, tentamos buscar os detalhes antes de mostrar o preview
       if (!qrData.driver && qrData.id) {
         toast.loading("Buscando detalhes do registro...", { id: 'fetch-details' });
-        try {
-          const { data, error } = await supabase
-            .from('registrations')
-            .select('*, drivers(name), buses(bus_number, plate), routes(name)')
-            .eq('id', qrData.id)
-            .single();
 
-          if (data && !error) {
-            qrData = {
-              ...qrData,
-              driver: data.drivers?.name,
-              bus: data.buses?.bus_number,
-              plate: data.buses?.plate,
-              route: data.routes?.name,
-              location: data.location
-            };
-            toast.success("Dados carregados!", { id: 'fetch-details' });
-          } else {
-            console.warn("Registro não encontrado no banco:", error);
-            toast.error("Atenção: Este QR Code não foi encontrado no banco de dados. Verifique se ele foi 'Enviado' no Painel Web.", { id: 'fetch-details', duration: 5000 });
+        // Tentar primeiro no cache local (registrationsList) - Mais rápido e funciona offline
+        const cachedReg = registrationsList.find(r => r.id === qrData.id);
+
+        if (cachedReg) {
+          qrData = {
+            ...qrData,
+            driver: cachedReg.drivers?.name,
+            bus: cachedReg.buses?.bus_number,
+            plate: cachedReg.buses?.plate,
+            route: cachedReg.routes?.name,
+            location: cachedReg.location
+          };
+          toast.success("Dados carregados do cache!", { id: 'fetch-details' });
+        } else if (isOnline) {
+          // Se não está no cache mas está online, tenta o Supabase
+          try {
+            const { data, error } = await supabase
+              .from('registrations')
+              .select('*, drivers(name), buses(bus_number, plate), routes(name)')
+              .eq('id', qrData.id)
+              .single();
+
+            if (data && !error) {
+              qrData = {
+                ...qrData,
+                driver: data.drivers?.name,
+                bus: data.buses?.bus_number,
+                plate: data.buses?.plate,
+                route: data.routes?.name,
+                location: data.location
+              };
+              toast.success("Dados carregados do servidor!", { id: 'fetch-details' });
+            } else {
+              console.warn("Registro não encontrado no banco:", error);
+              toast.error("Atenção: Este QR Code não foi encontrado. Clique em 'Atualizar Base' na tela do Scanner.", { id: 'fetch-details', duration: 5000 });
+            }
+          } catch (err) {
+            console.error("Erro ao buscar detalhes:", err);
+            toast.dismiss('fetch-details');
           }
-        } catch (err) {
-          console.error("Erro ao buscar detalhes:", err);
-          toast.dismiss('fetch-details');
+        } else {
+          // Offline e não está no cache
+          toast.error("Offline: Este QR Code não está na base local. Sincronize o app online primeiro.", { id: 'fetch-details', duration: 5000 });
         }
       }
 
@@ -246,26 +266,31 @@ const QRScanner = () => {
 
     try {
       let registration = null;
+      const searchId = qrData.id || qrData.registrationId;
 
-      if (isOnline) {
-        const { data, error } = await supabase
-          .from('registrations')
-          .select('*, drivers(name), buses(bus_number, plate), routes(name)')
-          .eq('id', qrData.id || qrData.registrationId)
-          .single();
-
-        if (!error && data) {
-          registration = data;
+      // 1. Tentar buscar no cache local primeiro (é instantâneo e serve para online/offline)
+      if (searchId) {
+        const found = registrationsList.find(r => r.id === searchId);
+        if (found) {
+          console.log("Registration found in local cache:", found);
+          registration = found;
         }
-      } else {
-        // Offline: Try to find in cached list
-        const searchId = qrData.id || qrData.registrationId;
-        if (searchId) {
-          const found = registrationsList.find(r => r.id === searchId);
-          if (found) {
-            console.log("Offline: Registration found in cache:", found);
-            registration = found;
+      }
+
+      // 2. Se não achou no cache e está online, tenta o Supabase como backup
+      if (!registration && isOnline && searchId) {
+        try {
+          const { data, error } = await supabase
+            .from('registrations')
+            .select('*, drivers(name), buses(bus_number, plate), routes(name)')
+            .eq('id', searchId)
+            .single();
+
+          if (!error && data) {
+            registration = data;
           }
+        } catch (e) {
+          console.warn("Erro ao buscar no Supabase durante save:", e);
         }
       }
 
