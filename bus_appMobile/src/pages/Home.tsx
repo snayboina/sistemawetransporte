@@ -15,7 +15,7 @@ const Home = () => {
             <Icon name="commute" className="text-[#FCD535]" size={20} />
           </div>
           <div>
-            <div className="text-white font-black text-sm tracking-tighter">SwiftRide</div>
+            <div className="text-white font-black text-sm tracking-tighter">SmartBus</div>
             <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Mobile VIP</div>
           </div>
         </div>
@@ -38,9 +38,9 @@ const Home = () => {
             <div className="absolute inset-0 bg-[#FCD535]/20 blur-[60px] rounded-full animate-pulse"></div>
             <div className="w-64 h-64 relative flex items-center justify-center animate-float">
               <img
-                src="https://res.cloudinary.com/duyb5dsw0/image/upload/v1767420380/onibus-escolar_uyqfx5.png"
-                alt="SwiftRide Logo"
-                className="w-full h-full object-contain filter drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
+                src="/favicon.png"
+                alt="SmartBus Logo"
+                className="w-full h-full object-contain filter drop-shadow-[0_20px_40px_rgba(252,213,53,0.5)] scale-75"
               />
             </div>
           </div>
