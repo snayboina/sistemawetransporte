@@ -26,6 +26,7 @@ export default function QRCodes() {
   const [showResultModal, setShowResultModal] = useState(false);
   const [saveStats, setSaveStats] = useState({ inserted: 0, duplicates: 0, errors: 0 });
   const [isPrintMode, setIsPrintMode] = useState(false);
+  const [printOrientation, setPrintOrientation] = useState<'portrait' | 'landscape'>('portrait');
 
   const generateQRData = (reg: Registration) => {
     // Para maior precisão na leitura, usamos apenas o ID. 
@@ -209,7 +210,7 @@ export default function QRCodes() {
           <title>QR Code - ${reg.busPlate}</title>
           <style>
              @page {
-              size: A4;
+              size: A4 ${printOrientation};
               margin: 0;
             }
             body {
@@ -230,7 +231,7 @@ export default function QRCodes() {
               padding: 40px;
               border: 2px solid #eee;
               border-radius: 24px;
-              width: 450px;
+              width: ${printOrientation === 'portrait' ? '450px' : '600px'};
               text-align: center;
             }
             svg {
@@ -525,6 +526,26 @@ export default function QRCodes() {
           Modo de Impressão (Alto Contraste / P&B)
         </label>
         <span className="text-[10px] text-muted-foreground bg-accent px-1.5 py-0.5 rounded">RECOMENDADO PARA IMPRIMIR</span>
+      </div>
+
+      <div className="flex items-center gap-2 px-4 py-2 bg-accent/30 rounded-lg border border-border w-fit">
+        <span className="text-sm font-medium text-foreground mr-2">Orientação:</span>
+        <Button
+          variant={printOrientation === 'portrait' ? 'primary' : 'outline'}
+          size="sm"
+          className="h-7 text-[11px]"
+          onClick={() => setPrintOrientation('portrait')}
+        >
+          Retrato (Vertical)
+        </Button>
+        <Button
+          variant={printOrientation === 'landscape' ? 'primary' : 'outline'}
+          size="sm"
+          className="h-7 text-[11px]"
+          onClick={() => setPrintOrientation('landscape')}
+        >
+          Paisagem (Horizontal)
+        </Button>
       </div>
 
       {/* QR Codes Grid */}

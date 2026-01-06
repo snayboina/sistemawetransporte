@@ -49,6 +49,9 @@ export default function Cadastro() {
   const [viewingSpecificReg, setViewingSpecificReg] = useState<Registration | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [printOrientation, setPrintOrientation] = useState<'portrait' | 'landscape'>('portrait');
+
   useEffect(() => {
     fetchInitialData();
   }, []);
@@ -359,7 +362,7 @@ export default function Cadastro() {
           <title>QR Code - ${plate}</title>
           <style>
             @page {
-              size: A4;
+              size: A4 ${printOrientation};
               margin: 0;
             }
             body {
@@ -380,7 +383,7 @@ export default function Cadastro() {
               padding: 40px;
               border: 2px solid #eee;
               border-radius: 24px;
-              width: 450px;
+              width: ${printOrientation === 'portrait' ? '450px' : '600px'};
               text-align: center;
             }
             svg {
@@ -688,6 +691,29 @@ export default function Cadastro() {
                   <span className="font-medium text-foreground truncate max-w-[150px]">
                     {viewingSpecificReg ? viewingSpecificReg.location : formData.location}
                   </span>
+                </div>
+              </div>
+
+              {/* Print Orientation Selector */}
+              <div className="flex flex-col gap-2 p-3 bg-accent/30 rounded-lg border border-border">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Orientação da Impressão</span>
+                <div className="flex gap-2">
+                  <Button
+                    variant={printOrientation === 'portrait' ? 'primary' : 'outline'}
+                    size="sm"
+                    className="flex-1 text-[11px] h-8"
+                    onClick={() => setPrintOrientation('portrait')}
+                  >
+                    Vertical (Retrato)
+                  </Button>
+                  <Button
+                    variant={printOrientation === 'landscape' ? 'primary' : 'outline'}
+                    size="sm"
+                    className="flex-1 text-[11px] h-8"
+                    onClick={() => setPrintOrientation('landscape')}
+                  >
+                    Horizontal (Paisagem)
+                  </Button>
                 </div>
               </div>
 
