@@ -697,7 +697,7 @@ export default function Cadastro() {
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Orientação da Impressão</span>
                 <div className="flex gap-2">
                   <Button
-                    variant={printOrientation === 'portrait' ? 'primary' : 'outline'}
+                    variant={printOrientation === 'portrait' ? 'default' : 'outline'}
                     size="sm"
                     className="flex-1 text-[11px] h-8"
                     onClick={() => setPrintOrientation('portrait')}
@@ -705,7 +705,7 @@ export default function Cadastro() {
                     Vertical (Retrato)
                   </Button>
                   <Button
-                    variant={printOrientation === 'landscape' ? 'primary' : 'outline'}
+                    variant={printOrientation === 'landscape' ? 'default' : 'outline'}
                     size="sm"
                     className="flex-1 text-[11px] h-8"
                     onClick={() => setPrintOrientation('landscape')}
