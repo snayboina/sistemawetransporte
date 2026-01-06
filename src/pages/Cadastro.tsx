@@ -378,36 +378,36 @@ export default function Cadastro() {
               flex-direction: column;
               align-items: center;
               justify-content: center;
-              padding: 40px;
+              padding: 30px;
               border: 2px solid #eee;
-              border-radius: 24px;
-              width: ${printOrientation === 'portrait' ? '450px' : '600px'};
+              border-radius: 20px;
+              width: ${printOrientation === 'portrait' ? '320px' : '450px'};
               text-align: center;
             }
             svg {
-              width: 350px !important;
-              height: 350px !important;
-              margin-bottom: 30px;
+              width: 220px !important;
+              height: 220px !important;
+              margin-bottom: 20px;
             }
             .info h1 {
-              margin: 0 0 15px;
-              font-size: 42px;
+              margin: 0 0 10px;
+              font-size: 28px;
               font-weight: 900;
               color: #000;
               letter-spacing: -1px;
             }
             .info p {
-              margin: 8px 0;
-              font-size: 16px;
+              margin: 4px 0;
+              font-size: 13px;
               color: #444;
               line-height: 1.4;
             }
             .info strong {
               color: #000;
               text-transform: uppercase;
-              font-size: 11px;
-              letter-spacing: 1px;
-              margin-right: 6px;
+              font-size: 9px;
+              letter-spacing: 0.5px;
+              margin-right: 4px;
             }
             @media print {
               body { -webkit-print-color-adjust: exact; }
