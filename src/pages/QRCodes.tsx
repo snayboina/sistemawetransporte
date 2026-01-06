@@ -531,7 +531,7 @@ export default function QRCodes() {
       <div className="flex items-center gap-2 px-4 py-2 bg-accent/30 rounded-lg border border-border w-fit">
         <span className="text-sm font-medium text-foreground mr-2">Orientação:</span>
         <Button
-          variant={printOrientation === 'portrait' ? 'primary' : 'outline'}
+          variant={printOrientation === 'portrait' ? 'default' : 'outline'}
           size="sm"
           className="h-7 text-[11px]"
           onClick={() => setPrintOrientation('portrait')}
@@ -539,7 +539,7 @@ export default function QRCodes() {
           Retrato (Vertical)
         </Button>
         <Button
-          variant={printOrientation === 'landscape' ? 'primary' : 'outline'}
+          variant={printOrientation === 'landscape' ? 'default' : 'outline'}
           size="sm"
           className="h-7 text-[11px]"
           onClick={() => setPrintOrientation('landscape')}
