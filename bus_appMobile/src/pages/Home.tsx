@@ -40,7 +40,7 @@ const Home = () => {
               <img
                 src="/favicon.png"
                 alt="SmartBus Logo"
-                className="w-full h-full object-contain filter drop-shadow-[0_20px_40px_rgba(252,213,53,0.5)] scale-75"
+                className="w-48 h-48 object-cover rounded-[3rem] shadow-2xl filter drop-shadow-[0_20px_40px_rgba(252,213,53,0.3)]"
               />
             </div>
           </div>
