@@ -228,36 +228,36 @@ export default function QRCodes() {
               flex-direction: column;
               align-items: center;
               justify-content: center;
-              padding: 30px;
-              border: 2px solid #eee;
-              border-radius: 20px;
-              width: ${printOrientation === 'portrait' ? '320px' : '450px'};
+              padding: 15px;
+              border: 1.5px solid #eee;
+              border-radius: 12px;
+              width: ${printOrientation === 'portrait' ? '250px' : '380px'};
               text-align: center;
             }
             svg {
-              width: 220px !important;
-              height: 220px !important;
-              margin-bottom: 20px;
+              width: 120px !important;
+              height: 120px !important;
+              margin-bottom: 10px;
             }
             .info h1 {
-              margin: 0 0 10px;
-              font-size: 28px;
+              margin: 0 0 4px;
+              font-size: 20px;
               font-weight: 900;
               color: #000;
-              letter-spacing: -1px;
+              letter-spacing: -0.5px;
             }
             .info p {
-              margin: 4px 0;
-              font-size: 13px;
+              margin: 2px 0;
+              font-size: 11px;
               color: #444;
-              line-height: 1.4;
+              line-height: 1.2;
             }
             .info strong {
               color: #000;
               text-transform: uppercase;
-              font-size: 9px;
-              letter-spacing: 0.5px;
-              margin-right: 4px;
+              font-size: 8px;
+              letter-spacing: 0.3px;
+              margin-right: 3px;
             }
             @media print {
               body { -webkit-print-color-adjust: exact; }
