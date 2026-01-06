@@ -48,8 +48,6 @@ export default function Cadastro() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [viewingSpecificReg, setViewingSpecificReg] = useState<Registration | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [printOrientation, setPrintOrientation] = useState<'portrait' | 'landscape'>('portrait');
 
   useEffect(() => {
