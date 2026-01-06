@@ -160,6 +160,129 @@ export default function QRCodes() {
     setTimeout(() => printWindow.print(), 500);
   };
 
+  const handleDownloadIndividual = (reg: Registration) => {
+    const svg = document.getElementById(`qr-${reg.id}`)?.querySelector('svg');
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      canvas.width = 300;
+      canvas.height = 300;
+      if (ctx) {
+        ctx.fillStyle = isPrintMode ? '#FFFFFF' : '#1E242B';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 25, 25, 250, 250);
+      }
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `qrcode-${reg.busPlate}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+      }, 'image/png');
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  const handlePrintIndividual = (reg: Registration) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const svg = document.getElementById(`qr-${reg.id}`)?.querySelector('svg');
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>QR Code - ${reg.busPlate}</title>
+          <style>
+             @page {
+              size: A4;
+              margin: 0;
+            }
+            body {
+              margin: 0;
+              padding: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              font-family: Arial, sans-serif;
+              background-color: #fff;
+            }
+            .print-card {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              padding: 40px;
+              border: 2px solid #eee;
+              border-radius: 24px;
+              width: 450px;
+              text-align: center;
+            }
+            svg {
+              width: 350px !important;
+              height: 350px !important;
+              margin-bottom: 30px;
+            }
+            .info h1 {
+              margin: 0 0 15px;
+              font-size: 42px;
+              font-weight: 900;
+              color: #000;
+              letter-spacing: -1px;
+            }
+            .info p {
+              margin: 8px 0;
+              font-size: 16px;
+              color: #444;
+              line-height: 1.4;
+            }
+            .info strong {
+              color: #000;
+              text-transform: uppercase;
+              font-size: 11px;
+              letter-spacing: 1px;
+              margin-right: 6px;
+            }
+            @media print {
+              body { -webkit-print-color-adjust: exact; }
+              .print-card { border-color: #000; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-card">
+            ${svgData}
+            <div class="info">
+              <h1>${reg.busPlate}</h1>
+              <p><strong>Motorista:</strong> ${reg.driverName}</p>
+              <p><strong>Ônibus:</strong> ${reg.busNumber || 'N/A'}</p>
+              <p><strong>Rota:</strong> ${reg.routeName}</p>
+              <p><strong>Localização:</strong> ${reg.location || 'N/A'}</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 500);
+  };
+
   const handleSaveToSupabase = async () => {
     if (registrations.length === 0) return;
     setIsSaving(true);
@@ -419,11 +542,11 @@ export default function QRCodes() {
         {registrations.map((reg) => (
           <div
             key={reg.id}
-            className="bg-card rounded-xl border border-border p-6 flex flex-col items-center"
+            className="bg-card rounded-xl border border-border p-6 flex flex-col items-center group relative overflow-hidden"
           >
             <div
               id={`qr-${reg.id}`}
-              className="p-4 bg-accent rounded-xl border-2 border-primary/20 mb-4"
+              className="p-4 bg-accent rounded-xl border-2 border-primary/20 mb-4 transition-all group-hover:border-primary/40"
             >
               <QRCodeSVG
                 value={generateQRData(reg)}
@@ -434,11 +557,32 @@ export default function QRCodes() {
                 fgColor={isPrintMode ? "#000000" : "#FCD535"}
               />
             </div>
-            <div className="text-center space-y-1 w-full">
-              <p className="font-mono text-primary text-sm">{reg.busPlate}</p>
+            <div className="text-center space-y-1 w-full mb-4">
+              <p className="font-mono text-primary text-sm font-bold">{reg.busPlate}</p>
               <p className="font-medium text-foreground text-sm truncate">{reg.driverName}</p>
               <p className="text-muted-foreground text-xs">{reg.busNumber}</p>
               <p className="text-muted-foreground text-xs truncate">{reg.routeName}</p>
+            </div>
+
+            <div className="flex gap-2 w-full mt-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 h-9 bg-accent/50 hover:bg-primary/10 hover:text-primary border-border"
+                onClick={() => handleDownloadIndividual(reg)}
+              >
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+                Baixar
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 h-9 bg-accent/50 hover:bg-primary/10 hover:text-primary border-border"
+                onClick={() => handlePrintIndividual(reg)}
+              >
+                <Printer className="w-3.5 h-3.5 mr-1.5" />
+                Imprimir
+              </Button>
             </div>
           </div>
         ))}

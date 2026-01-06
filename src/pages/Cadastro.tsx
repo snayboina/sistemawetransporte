@@ -351,40 +351,88 @@ export default function Cadastro() {
     const driverName = viewingSpecificReg ? viewingSpecificReg.driverName : selectedDriver?.name;
     const busNumber = viewingSpecificReg ? viewingSpecificReg.busNumber : selectedBus?.bus_number;
     const routeName = viewingSpecificReg ? viewingSpecificReg.routeName : selectedRoute?.name;
+    const locationValue = viewingSpecificReg ? viewingSpecificReg.location : formData.location;
 
     printWindow.document.write(`
       <html>
         <head>
           <title>QR Code - ${plate}</title>
           <style>
+            @page {
+              size: A4;
+              margin: 0;
+            }
             body {
+              margin: 0;
+              padding: 0;
               display: flex;
-              flex-direction: column;
               align-items: center;
               justify-content: center;
               min-height: 100vh;
               font-family: Arial, sans-serif;
-              background: #fff;
+              background-color: #fff;
             }
-            .info { margin-top: 20px; text-align: center; }
-            .info h2 { margin: 0 0 10px; }
-            .info p { margin: 5px 0; color: #666; }
+            .print-card {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              padding: 40px;
+              border: 2px solid #eee;
+              border-radius: 24px;
+              width: 450px;
+              text-align: center;
+            }
+            svg {
+              width: 350px !important;
+              height: 350px !important;
+              margin-bottom: 30px;
+            }
+            .info h1 {
+              margin: 0 0 15px;
+              font-size: 42px;
+              font-weight: 900;
+              color: #000;
+              letter-spacing: -1px;
+            }
+            .info p {
+              margin: 8px 0;
+              font-size: 16px;
+              color: #444;
+              line-height: 1.4;
+            }
+            .info strong {
+              color: #000;
+              text-transform: uppercase;
+              font-size: 11px;
+              letter-spacing: 1px;
+              margin-right: 6px;
+            }
+            @media print {
+              body { -webkit-print-color-adjust: exact; }
+              .print-card { border-color: #000; }
+            }
           </style>
         </head>
         <body>
-          ${svgData}
-          <div class="info">
-            <h2>${plate}</h2>
-            <p><strong>Motorista:</strong> ${driverName}</p>
-            <p><strong>Ônibus:</strong> ${busNumber || 'N/A'}</p>
-            <p><strong>Rota:</strong> ${routeName}</p>
+          <div class="print-card">
+            ${svgData}
+            <div class="info">
+              <h1>${plate}</h1>
+              <p><strong>Motorista:</strong> ${driverName}</p>
+              <p><strong>Ônibus:</strong> ${busNumber || 'N/A'}</p>
+              <p><strong>Rota:</strong> ${routeName}</p>
+              <p><strong>Localização:</strong> ${locationValue}</p>
+            </div>
           </div>
         </body>
       </html>
     `);
 
     printWindow.document.close();
-    printWindow.print();
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
   };
 
   const handleCopy = async () => {
