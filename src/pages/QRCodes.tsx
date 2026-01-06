@@ -533,7 +533,10 @@ export default function QRCodes() {
         <Button
           variant={printOrientation === 'portrait' ? 'default' : 'outline'}
           size="sm"
-          className="h-7 text-[11px]"
+          className={cn(
+            "h-7 text-[11px]",
+            printOrientation === 'portrait' ? "bg-primary text-black hover:bg-primary/90" : ""
+          )}
           onClick={() => setPrintOrientation('portrait')}
         >
           Retrato (Vertical)
@@ -541,7 +544,10 @@ export default function QRCodes() {
         <Button
           variant={printOrientation === 'landscape' ? 'default' : 'outline'}
           size="sm"
-          className="h-7 text-[11px]"
+          className={cn(
+            "h-7 text-[11px]",
+            printOrientation === 'landscape' ? "bg-primary text-black hover:bg-primary/90" : ""
+          )}
           onClick={() => setPrintOrientation('landscape')}
         >
           Paisagem (Horizontal)

@@ -699,7 +699,10 @@ export default function Cadastro() {
                   <Button
                     variant={printOrientation === 'portrait' ? 'default' : 'outline'}
                     size="sm"
-                    className="flex-1 text-[11px] h-8"
+                    className={cn(
+                      "flex-1 text-[11px] h-8",
+                      printOrientation === 'portrait' ? "bg-primary text-black hover:bg-primary/90" : ""
+                    )}
                     onClick={() => setPrintOrientation('portrait')}
                   >
                     Vertical (Retrato)
@@ -707,7 +710,10 @@ export default function Cadastro() {
                   <Button
                     variant={printOrientation === 'landscape' ? 'default' : 'outline'}
                     size="sm"
-                    className="flex-1 text-[11px] h-8"
+                    className={cn(
+                      "flex-1 text-[11px] h-8",
+                      printOrientation === 'landscape' ? "bg-primary text-black hover:bg-primary/90" : ""
+                    )}
                     onClick={() => setPrintOrientation('landscape')}
                   >
                     Horizontal (Paisagem)
