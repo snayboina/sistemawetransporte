@@ -99,6 +99,13 @@ export default {
           "0%, 100%": { boxShadow: "0 0 20px hsl(47 97% 60% / 0.15)" },
           "50%": { boxShadow: "0 0 30px hsl(47 97% 60% / 0.25)" },
         },
+        tada: {
+          "0%": { transform: "scale(1)" },
+          "10%, 20%": { transform: "scale(0.9) rotate(-3deg)" },
+          "30%, 50%, 70%, 90%": { transform: "scale(1.1) rotate(3deg)" },
+          "40%, 60%, 80%": { transform: "scale(1.1) rotate(-3deg)" },
+          "100%": { transform: "scale(1) rotate(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -107,6 +114,7 @@ export default {
         "slide-in": "slide-in 0.3s ease-out",
         "scale-in": "scale-in 0.2s ease-out",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        tada: "tada 1s ease-in-out infinite",
       },
     },
   },
