@@ -271,7 +271,8 @@ export default function QRCodes() {
           bus_id: busId,
           route_id: routeId,
           location: reg.location,
-          status: 'active'
+          status: 'active',
+          qr_code_data: reg.id // Usamos o ID como dado do QR Code
         }]).select().single();
 
         if (regError) {
@@ -288,20 +289,6 @@ export default function QRCodes() {
 
         if (!newReg) continue;
 
-        // 4. Update QR Code Data with real DB id
-        const finalQRData = JSON.stringify({
-          id: newReg.id,
-          driver: reg.driverName,
-          driverBrief: reg.driverName.split(' ')[0].toUpperCase(),
-          bus: reg.busNumber,
-          plate: normalizedPlate,
-          route: reg.routeName,
-          location: reg.location,
-          createdAt: newReg.created_at,
-        });
-
-        // Update in DB (for qr_code_data column) - We still save the ID for reference
-        await supabase.from('registrations').update({ qr_code_data: newReg.id }).eq('id', newReg.id);
 
         updatedRegistrations[i] = {
           ...reg,
@@ -382,23 +369,25 @@ export default function QRCodes() {
             <Printer className="w-4 h-4 mr-2" />
             Imprimir Todos
           </Button>
-          <Button
-            onClick={handleSaveToSupabase}
-            disabled={isSaving}
-            className={cn(
-              "font-bold transition-all duration-500",
-              saveStats.inserted === 0 && registrations.length > 0 && !isSaving
-                ? "bg-primary text-black hover:bg-primary/90 scale-105 shadow-[0_0_20px_rgba(252,213,53,0.4)] animate-pulse"
-                : ""
-            )}
-          >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <CloudUpload className="w-4 h-4 mr-2" />
-            )}
-            {isSaving ? 'Enviando...' : 'Enviar ao Banco de dados'}
-          </Button>
+          {!location.state?.isAlreadySaved && (
+            <Button
+              onClick={handleSaveToSupabase}
+              disabled={isSaving}
+              className={cn(
+                "font-bold transition-all duration-500",
+                saveStats.inserted === 0 && registrations.length > 0 && !isSaving
+                  ? "bg-primary text-black hover:bg-primary/90 scale-105 shadow-[0_0_20px_rgba(252,213,53,0.4)] animate-pulse"
+                  : ""
+              )}
+            >
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CloudUpload className="w-4 h-4 mr-2" />
+              )}
+              {isSaving ? 'Enviando...' : 'Enviar ao Banco de dados'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -416,14 +405,16 @@ export default function QRCodes() {
       </div>
 
       {/* QR Codes Grid */}
-      {saveStats.inserted === 0 && registrations.length > 0 && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 mb-4 flex items-center gap-3 text-amber-500">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <p className="text-sm font-medium">
-            <strong>Atenção:</strong> Os QR Codes abaixo só funcionarão no aplicativo após você clicar no botão <strong>"Enviar ao Banco de dados"</strong> acima.
-          </p>
-        </div>
-      )}
+      {
+        !location.state?.isAlreadySaved && saveStats.inserted === 0 && registrations.length > 0 && !isSaving && (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 mb-4 flex items-center gap-3 text-amber-500">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <p className="text-sm font-medium">
+              <strong>Atenção:</strong> Os QR Codes abaixo só funcionarão no aplicativo após você clicar no botão <strong>"Enviar ao Banco de dados"</strong> acima.
+            </p>
+          </div>
+        )
+      }
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {registrations.map((reg) => (
           <div
@@ -504,6 +495,6 @@ export default function QRCodes() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </div >
   );
 }

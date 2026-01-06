@@ -49,7 +49,7 @@ export default function Welcome() {
       </header>
 
       {/* Hero Section */}
-      <div className="relative pt-32 pb-20 px-6 overflow-hidden bg-[#020817]">
+      <div className="relative pt-32 pb-20 px-6 overflow-hidden bg-white dark:bg-[#020817] transition-colors duration-300">
         {/* Background Gradient Spot */}
         <div className="absolute top-0 right-0 w-[50%] h-[50%] bg-blue-900/10 blur-[120px] rounded-full pointer-events-none"></div>
 
@@ -58,18 +58,18 @@ export default function Welcome() {
 
             {/* Left Content */}
             <div className="relative z-10 animate-in fade-in slide-in-from-left duration-700">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gray-800/50 border border-gray-700 rounded-full text-xs font-bold text-[#FCD535] uppercase tracking-wider mb-8">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-full text-xs font-bold text-[#FCD535] uppercase tracking-wider mb-8">
                 <span className="w-2 h-2 bg-[#FCD535] rounded-full animate-pulse shadow-[0_0_8px_#FCD535]"></span>
                 Sistema em Tempo Real
               </div>
 
-              <h1 className="text-6xl md:text-7xl font-extrabold text-white mb-6 leading-[1.1] tracking-tight">
+              <h1 className="text-6xl md:text-7xl font-extrabold text-gray-900 dark:text-white mb-6 leading-[1.1] tracking-tight">
                 Contagem
                 <br />
                 <span className="text-[#FCD535]">Otimizada</span>
               </h1>
 
-              <p className="text-lg text-gray-400 mb-10 leading-relaxed max-w-lg">
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-10 leading-relaxed max-w-lg">
                 A plataforma SaaS definitiva para monitoramento de frotas,
                 controle de passageiros e segurança veicular. Dados precisos
                 para decisões estratégicas.
@@ -82,9 +82,9 @@ export default function Welcome() {
                   { icon: BarChart3, label: "Analytics Tempo Real" },
                   { icon: Shield, label: "Segurança de Dados" },
                 ].map((feature, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-4 bg-[#0F172A] border border-gray-800 rounded-xl hover:border-[#FCD535]/50 transition-colors group">
+                  <div key={idx} className="flex items-center gap-3 p-4 bg-white dark:bg-[#0F172A] border border-gray-100 dark:border-gray-800 rounded-xl hover:border-[#FCD535]/50 transition-colors group shadow-sm dark:shadow-none">
                     <feature.icon className="w-5 h-5 text-[#FCD535]" />
-                    <div className="text-sm font-semibold text-gray-200">
+                    <div className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                       {feature.label}
                     </div>
                   </div>
@@ -99,16 +99,16 @@ export default function Welcome() {
                   Acessar Agora
                   <ArrowRight className="w-5 h-5" />
                 </button>
-                <button className="px-8 py-4 bg-transparent border border-gray-700 text-white rounded-xl font-bold text-lg hover:bg-white/5 transition-all flex items-center gap-2">
+                <button className="px-8 py-4 bg-transparent border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl font-bold text-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-all flex items-center gap-2">
                   <PlayCircle className="w-5 h-5" />
                   Explorar Demo
                 </button>
               </div>
 
-              <div className="flex items-center gap-4 text-sm text-gray-400 font-medium">
+              <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 font-medium">
                 <div className="flex -space-x-3">
                   {['A', 'B', 'C', 'D'].map(i => (
-                    <div key={i} className="w-10 h-10 rounded-full border-2 border-[#020817] bg-gray-700 flex items-center justify-center text-xs font-bold text-white">
+                    <div key={i} className="w-10 h-10 rounded-full border-2 border-white dark:border-[#020817] bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-900 dark:text-white">
                       {i}
                     </div>
                   ))}
@@ -128,22 +128,22 @@ export default function Welcome() {
                 />
 
                 {/* Floating Overlay Card Example (Optional - based on image visual) */}
-                <div className="absolute bottom-10 left-[-20px] bg-[#1a1f2e]/90 backdrop-blur-md p-4 rounded-xl border border-gray-700 shadow-2xl animate-in slide-in-from-bottom-4 duration-1000 delay-500">
+                <div className="absolute bottom-10 left-[-20px] bg-white/90 dark:bg-[#1a1f2e]/90 backdrop-blur-md p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-2xl animate-in slide-in-from-bottom-4 duration-1000 delay-500">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-[#FCD535]/20 rounded-lg">
                       <BarChart3 className="w-6 h-6 text-[#FCD535]" />
                     </div>
                     <div>
-                      <div className="text-xl font-bold text-white">98.5%</div>
-                      <div className="text-xs text-gray-400">Uptime garantido</div>
+                      <div className="text-xl font-bold text-gray-900 dark:text-white">98.5%</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Uptime garantido</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="absolute top-10 right-[-10px] bg-[#1a1f2e]/90 backdrop-blur-md px-4 py-2 rounded-full border border-gray-700 shadow-xl animate-in slide-in-from-top-4 duration-1000 delay-700">
+                <div className="absolute top-10 right-[-10px] bg-white/90 dark:bg-[#1a1f2e]/90 backdrop-blur-md px-4 py-2 rounded-full border border-gray-100 dark:border-gray-700 shadow-xl animate-in slide-in-from-top-4 duration-1000 delay-700">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm font-bold text-white">5 veículos online</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">5 veículos online</span>
                   </div>
                 </div>
 

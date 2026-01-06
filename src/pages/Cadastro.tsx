@@ -19,6 +19,7 @@ import * as XLSX from 'xlsx';
 import { Registration, Driver, Bus as BusType, Route as TransportRoute } from '@/types/transport';
 import { supabase } from '@/lib/supabase';
 import { useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
 interface FormData {
   driverId: string;
@@ -46,6 +47,7 @@ export default function Cadastro() {
   const [routes, setRoutes] = useState<TransportRoute[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [viewingSpecificReg, setViewingSpecificReg] = useState<Registration | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchInitialData();
@@ -187,8 +189,8 @@ export default function Cadastro() {
       }
 
       // Create registrations
-      const newRegistrations: Registration[] = jsonData.map((row, index) => {
-        const id = `REG-${Date.now()}-${index}`;
+      const newRegistrations: Registration[] = jsonData.map((row) => {
+        const id = crypto.randomUUID();
 
         // Normalize data
         const normalizedPlate = row.Placa?.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || '';
@@ -201,11 +203,11 @@ export default function Cadastro() {
 
         return {
           id,
-          driverId: `DRV-${index}`,
+          driverId: crypto.randomUUID(), // Temporário, será resolvido no salvamento
           driverName: normalizedDriverName,
           busNumber: row.Onibus,
           busPlate: normalizedPlate,
-          routeId: `RT-${index}`,
+          routeId: crypto.randomUUID(), // Temporário, será resolvido no salvamento
           routeName: normalizedRouteName,
           location: row.Localizacao,
           createdAt: new Date(),
@@ -319,7 +321,8 @@ export default function Cadastro() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `qrcode-${selectedBus?.plate || 'transport'}.png`;
+        const plate = viewingSpecificReg ? viewingSpecificReg.busPlate : selectedBus?.plate;
+        link.download = `qrcode-${plate || 'transport'}.png`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -344,10 +347,15 @@ export default function Cadastro() {
 
     const svgData = new XMLSerializer().serializeToString(svg);
 
+    const plate = viewingSpecificReg ? viewingSpecificReg.busPlate : selectedBus?.plate;
+    const driverName = viewingSpecificReg ? viewingSpecificReg.driverName : selectedDriver?.name;
+    const busNumber = viewingSpecificReg ? viewingSpecificReg.busNumber : selectedBus?.bus_number;
+    const routeName = viewingSpecificReg ? viewingSpecificReg.routeName : selectedRoute?.name;
+
     printWindow.document.write(`
       <html>
         <head>
-          <title>QR Code - ${selectedBus?.plate}</title>
+          <title>QR Code - ${plate}</title>
           <style>
             body {
               display: flex;
@@ -366,10 +374,10 @@ export default function Cadastro() {
         <body>
           ${svgData}
           <div class="info">
-            <h2>${selectedBus?.plate}</h2>
-            <p><strong>Motorista:</strong> ${selectedDriver?.name}</p>
-            <p><strong>Ônibus:</strong> ${selectedBus ? selectedBus.bus_number : 'N/A'}</p>
-            <p><strong>Rota:</strong> ${selectedRoute?.name}</p>
+            <h2>${plate}</h2>
+            <p><strong>Motorista:</strong> ${driverName}</p>
+            <p><strong>Ônibus:</strong> ${busNumber || 'N/A'}</p>
+            <p><strong>Rota:</strong> ${routeName}</p>
           </div>
         </body>
       </html>
@@ -397,6 +405,27 @@ export default function Cadastro() {
     setFormData({ driverId: '', busId: '', routeId: '', location: '' });
     setGeneratedQR(null);
     setViewingSpecificReg(null);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === registrations.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(registrations.map(r => r.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkGenerateQR = () => {
+    const selectedRegs = registrations.filter(r => selectedIds.includes(r.id));
+    if (selectedRegs.length === 0) return;
+
+    navigate('/qrcodes', { state: { registrations: selectedRegs, isAlreadySaved: true } });
   };
 
   return (
@@ -649,14 +678,33 @@ export default function Cadastro() {
 
       {/* Recent Registrations */}
       <div className="bg-card rounded-xl border border-border p-6">
-        <h2 className="font-semibold text-foreground mb-4">Cadastros Recentes</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h2 className="font-semibold text-foreground">Cadastros Recentes</h2>
+          {selectedIds.length > 0 && (
+            <Button
+              onClick={handleBulkGenerateQR}
+              className="bg-primary text-black hover:bg-primary/90 animate-scale-in"
+            >
+              <QrCode className="w-4 h-4 mr-2" />
+              Imprimir Selecionados ({selectedIds.length})
+            </Button>
+          )}
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left py-3 px-4 text-muted-foreground font-medium">ID</th>
+                <th className="py-3 px-4 text-left w-10">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.length === registrations.length && registrations.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary bg-accent"
+                  />
+                </th>
                 <th className="text-left py-3 px-4 text-muted-foreground font-medium">Motorista</th>
                 <th className="text-left py-3 px-4 text-muted-foreground font-medium">Ônibus</th>
+                <th className="text-left py-3 px-4 text-muted-foreground font-medium">Placa</th>
                 <th className="text-left py-3 px-4 text-muted-foreground font-medium">Rota</th>
                 <th className="text-left py-3 px-4 text-muted-foreground font-medium">Data</th>
                 <th className="text-right py-3 px-4 text-muted-foreground font-medium">Ações</th>
@@ -664,11 +712,24 @@ export default function Cadastro() {
             </thead>
             <tbody>
               {registrations.map((reg) => (
-                <tr key={reg.id} className="border-b border-border/50 hover:bg-accent/50 transition-colors">
-                  <td className="py-3 px-4 font-mono text-primary truncate max-w-[100px]">{reg.id}</td>
-                  <td className="py-3 px-4 text-foreground">{reg.driverName}</td>
+                <tr
+                  key={reg.id}
+                  className={cn(
+                    "border-b border-border/50 hover:bg-accent/50 transition-colors",
+                    selectedIds.includes(reg.id) ? "bg-primary/5" : ""
+                  )}
+                >
+                  <td className="py-3 px-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(reg.id)}
+                      onChange={() => toggleSelect(reg.id)}
+                      className="w-4 h-4 rounded border-border text-primary focus:ring-primary bg-accent"
+                    />
+                  </td>
+                  <td className="py-3 px-4 text-foreground font-medium">{reg.driverName}</td>
                   <td className="py-3 px-4 text-foreground">{reg.busNumber}</td>
-                  <td className="py-3 px-4 text-foreground">{reg.busPlate}</td>
+                  <td className="py-3 px-4 text-primary font-mono">{reg.busPlate}</td>
                   <td className="py-3 px-4 text-foreground">{reg.routeName}</td>
                   <td className="py-3 px-4 text-muted-foreground">
                     {format(reg.createdAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
