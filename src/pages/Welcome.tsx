@@ -99,9 +99,12 @@ export default function Welcome() {
                   Acessar Agora
                   <ArrowRight className="w-5 h-5" />
                 </button>
-                <button className="px-8 py-4 bg-transparent border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl font-bold text-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-all flex items-center gap-2">
+                <button
+                  onClick={() => navigate('/scanner')}
+                  className="px-8 py-4 bg-transparent border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl font-bold text-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-all flex items-center gap-2"
+                >
                   <PlayCircle className="w-5 h-5" />
-                  Explorar Demo
+                  Abrir Scanner
                 </button>
               </div>
 

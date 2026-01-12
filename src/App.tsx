@@ -11,6 +11,7 @@ import Cadastro from "./pages/Cadastro";
 import Sincronizacao from "./pages/Sincronizacao";
 import QRCodes from "./pages/QRCodes";
 import Divergencias from "./pages/Divergencias";
+import QRScanner from "./pages/QRScanner";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/sincronizacao" element={<Sincronizacao />} />
             <Route path="/qrcodes" element={<QRCodes />} />
             <Route path="/divergencias" element={<Divergencias />} />
+            <Route path="/scanner" element={<QRScanner />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

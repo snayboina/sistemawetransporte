@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+﻿import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '@/components/Icon';
 import scannerBg from '@/assets/scanner-background.jpg';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { toast } from 'sonner';
+import PassengerModal from '@/components/PassengerModal';
 
 const QRScanner = () => {
   const navigate = useNavigate();
@@ -23,7 +24,13 @@ const QRScanner = () => {
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [manualId, setManualId] = useState('');
   const [manualDriver, setManualDriver] = useState('');
+  const [manualDriver, setManualDriver] = useState('');
   const [isDivergent, setIsDivergent] = useState(false);
+
+  // Passenger Modal State
+  const [showPassengerModal, setShowPassengerModal] = useState(false);
+  const [pendingSaveCtx, setPendingSaveCtx] = useState<{ data: any, isDirect: boolean } | null>(null);
+
   // const [registrationsList, setRegistrationsList] = useState<any[]>([]); // Agora vem do hook
 
   const [filteredSuggestions, setFilteredSuggestions] = useState<any[]>([]);
@@ -37,7 +44,7 @@ const QRScanner = () => {
     localStorage.setItem('swiftride_auto_send', String(autoSend));
   }, [autoSend]);
 
-  // Função para tocar o som de "pip" (Beep)
+  // Fun├º├úo para tocar o som de "pip" (Beep)
   const playBeep = () => {
     try {
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -56,7 +63,7 @@ const QRScanner = () => {
       oscillator.start(audioCtx.currentTime);
       oscillator.stop(audioCtx.currentTime + 0.08);
     } catch (e) {
-      console.warn("Não foi possível tocar o som de feedback", e);
+      console.warn("N├úo foi poss├¡vel tocar o som de feedback", e);
     }
   };
 
@@ -91,37 +98,37 @@ const QRScanner = () => {
       setPreviewData(null);
       console.log("Solicitando startScanner...");
 
-      // Se já está escaneando, não faz nada
+      // Se j├í est├í escaneando, n├úo faz nada
       if (qrCodeRef.current?.isScanning) {
-        console.log("Já existe uma sessão de scan ativa.");
+        console.log("J├í existe uma sess├úo de scan ativa.");
         return;
       }
 
       // Garante que o elemento existe
       const element = document.getElementById("reader");
       if (!element) {
-        console.warn("Elemento 'reader' não encontrado no DOM. Aguardando...");
+        console.warn("Elemento 'reader' n├úo encontrado no DOM. Aguardando...");
         setTimeout(startScanner, 300);
         return;
       }
 
-      // Cria a instância se não existir, mas NÃO a apaga no stop
+      // Cria a inst├óncia se n├úo existir, mas N├âO a apaga no stop
       if (!qrCodeRef.current) {
         qrCodeRef.current = new Html5Qrcode("reader", {
           formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
           verbose: false
         });
-        console.log("Nova instância Html5Qrcode persistente criada.");
+        console.log("Nova inst├óncia Html5Qrcode persistente criada.");
       }
 
       setHasPermission(true);
       isProcessingRef.current = false; // Reseta a trava ao iniciar novo scan
 
-      // Delay de segurança maior para permitir liberação de hardware
+      // Delay de seguran├ºa maior para permitir libera├º├úo de hardware
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const width = window.innerWidth;
-      const qrboxSize = Math.min(width * 0.8, 300); // Ajustado para ser proporcional e não ultrapassar 300px
+      const qrboxSize = Math.min(width * 0.8, 300); // Ajustado para ser proporcional e n├úo ultrapassar 300px
 
       await qrCodeRef.current.start(
         { facingMode: "environment" },
@@ -137,20 +144,20 @@ const QRScanner = () => {
       setIsScanning(true);
       console.log("Scanner iniciado com sucesso.");
     } catch (error: any) {
-      console.error("Erro fatal ao iniciar câmera:", error);
+      console.error("Erro fatal ao iniciar c├ómera:", error);
       setIsScanning(false);
 
       const errorStr = String(error);
       if (errorStr.includes("NotAllowedError") || errorStr.includes("Permission denied")) {
         setHasPermission(false);
-        toast.error("Permissão de câmera negada.");
+        toast.error("Permiss├úo de c├ómera negada.");
       } else {
         // Se falhou por 'Already scanning', tenta resetar o estado interno
         if (errorStr.includes("Already scanning")) {
           console.log("Detectado conflito 'Already scanning'. Tentando recuperar...");
           setIsScanning(true);
         } else {
-          toast.error("Conexão com a câmera falhou. Tente novamente.");
+          toast.error("Conex├úo com a c├ómera falhou. Tente novamente.");
         }
       }
     }
@@ -165,7 +172,7 @@ const QRScanner = () => {
           console.log("Scanner parado com sucesso.");
         }
       } catch (err) {
-        console.warn("Aviso ao parar câmera (pode já estar parada):", err);
+        console.warn("Aviso ao parar c├ómera (pode j├í estar parada):", err);
       }
       setIsScanning(false);
     }
@@ -183,16 +190,16 @@ const QRScanner = () => {
       // Tenta fazer o parse do JSON (formato antigo)
       qrData = JSON.parse(decodedText);
     } catch (e) {
-      // Se falhar o parse, assume que é o novo formato (apenas o ID)
-      console.log("QR Code não é JSON, tratando como ID puro:", decodedText);
+      // Se falhar o parse, assume que ├® o novo formato (apenas o ID)
+      console.log("QR Code n├úo ├® JSON, tratando como ID puro:", decodedText);
 
-      // Validação básica: IDs no banco são numéricos ou UUIDs
-      // Se não for nulo nem vazio, assumimos que é o ID da escala
+      // Valida├º├úo b├ísica: IDs no banco s├úo num├®ricos ou UUIDs
+      // Se n├úo for nulo nem vazio, assumimos que ├® o ID da escala
       if (decodedText && decodedText.trim().length > 0) {
         qrData = { id: decodedText.trim() };
       } else {
-        console.error("QR Code vazio ou inválido");
-        toast.error("QR Code inválido.");
+        console.error("QR Code vazio ou inv├ílido");
+        toast.error("QR Code inv├ílido.");
         isProcessingRef.current = false;
         return;
       }
@@ -202,7 +209,8 @@ const QRScanner = () => {
 
     if (isDirectMode) {
       await stopScanner();
-      await processAndSave(qrData, true);
+      // await processAndSave(qrData, true);
+      initiatePassengerFlow(qrData, true);
     } else {
       await stopScanner();
 
@@ -210,7 +218,7 @@ const QRScanner = () => {
       if (!qrData.driver && qrData.id) {
         toast.loading("Buscando detalhes do registro...", { id: 'fetch-details' });
 
-        // Tentar primeiro no cache local (registrationsList) - Mais rápido e funciona offline
+        // Tentar primeiro no cache local (registrationsList) - Mais r├ípido e funciona offline
         const cachedReg = registrationsList.find(r => r.id === qrData.id);
 
         if (cachedReg) {
@@ -224,7 +232,7 @@ const QRScanner = () => {
           };
           toast.success("Dados carregados do cache!", { id: 'fetch-details' });
         } else if (isOnline) {
-          // Se não está no cache mas está online, tenta o Supabase
+          // Se n├úo est├í no cache mas est├í online, tenta o Supabase
           try {
             const { data, error } = await supabase
               .from('registrations')
@@ -243,16 +251,16 @@ const QRScanner = () => {
               };
               toast.success("Dados carregados do servidor!", { id: 'fetch-details' });
             } else {
-              console.warn("Registro não encontrado no banco:", error);
-              toast.error("Atenção: Este QR Code não foi encontrado. Clique em 'Atualizar Base' na tela do Scanner.", { id: 'fetch-details', duration: 5000 });
+              console.warn("Registro n├úo encontrado no banco:", error);
+              toast.error("Aten├º├úo: Este QR Code n├úo foi encontrado. Clique em 'Atualizar Base' na tela do Scanner.", { id: 'fetch-details', duration: 5000 });
             }
           } catch (err) {
             console.error("Erro ao buscar detalhes:", err);
             toast.dismiss('fetch-details');
           }
         } else {
-          // Offline e não está no cache
-          toast.error("Offline: Este QR Code não está na base local. Sincronize o app online primeiro.", { id: 'fetch-details', duration: 5000 });
+          // Offline e n├úo est├í no cache
+          toast.error("Offline: Este QR Code n├úo est├í na base local. Sincronize o app online primeiro.", { id: 'fetch-details', duration: 5000 });
         }
       }
 
@@ -260,7 +268,20 @@ const QRScanner = () => {
     }
   }
 
-  async function processAndSave(qrData: any, isDirect: boolean = false) {
+  function initiatePassengerFlow(data: any, isDirect: boolean) {
+    setPendingSaveCtx({ data, isDirect });
+    setShowPassengerModal(true);
+  }
+
+  function handlePassengerConfirm(count: number) {
+    setShowPassengerModal(false);
+    if (pendingSaveCtx) {
+      processAndSave(pendingSaveCtx.data, count, pendingSaveCtx.isDirect);
+      setPendingSaveCtx(null);
+    }
+  }
+
+  async function processAndSave(qrData: any, passengerCount: number, isDirect: boolean = false) {
     setIsSaving(true);
     toast.loading("Processando leitura...", { id: 'saving-scan' });
 
@@ -268,7 +289,7 @@ const QRScanner = () => {
       let registration = null;
       const searchId = qrData.id || qrData.registrationId;
 
-      // 1. Tentar buscar no cache local primeiro (é instantâneo e serve para online/offline)
+      // 1. Tentar buscar no cache local primeiro (├® instant├óneo e serve para online/offline)
       if (searchId) {
         const found = registrationsList.find(r => r.id === searchId);
         if (found) {
@@ -277,7 +298,7 @@ const QRScanner = () => {
         }
       }
 
-      // 2. Se não achou no cache e está online, tenta o Supabase como backup
+      // 2. Se n├úo achou no cache e est├í online, tenta o Supabase como backup
       if (!registration && isOnline && searchId) {
         try {
           const { data, error } = await supabase
@@ -296,37 +317,39 @@ const QRScanner = () => {
 
       await saveReading({
         registration_id: registration?.id || qrData.id || qrData.registrationId || null,
-        // driver_name agora representa o que o BANCO esperava (ou o que está no QR original)
+        // driver_name agora representa o que o BANCO esperava (ou o que est├í no QR original)
         driver_name: registration?.drivers?.name || qrData.driver || qrData.driverName || qrData.manualDriverName || 'N/A',
         bus_number: registration?.buses?.bus_number || qrData.bus || qrData.busNumber || 'N/A',
         bus_plate: registration?.buses?.plate || qrData.plate || qrData.busPlate || 'N/A',
         route_name: registration?.routes?.name || qrData.route || qrData.routeName || 'N/A',
         location: registration?.location || qrData.location || '0,0',
+        location: registration?.location || qrData.location || '0,0',
         reading_location: 'Local Atual',
         read_at: new Date().toISOString(),
         has_divergence: isDivergent,
+        passenger_count: passengerCount,
         // real_driver_name agora representa o que o FISCAL digitou
         real_driver_name: isDivergent ? (qrData.manualDriverName || registration?.drivers?.name || qrData.driver) : null
       });
 
-      toast.success("Código lido e sincronizado!", { id: 'saving-scan' });
+      toast.success("C├│digo lido e sincronizado!", { id: 'saving-scan' });
       setIsSaving(false);
-      isProcessingRef.current = false; // Libera a trava após sucesso
+      isProcessingRef.current = false; // Libera a trava ap├│s sucesso
 
-      // Limpa os estados para o próximo scan
+      // Limpa os estados para o pr├│ximo scan
       setIsDivergent(false);
       setManualId('');
       setManualDriver('');
 
       if (isDirect) {
-        // No modo direto, apenas reinicia o scanner para a próxima leitura sem sair da tela
-        console.log("Fluxo Direto concluído. Reiniciando...");
+        // No modo direto, apenas reinicia o scanner para a pr├│xima leitura sem sair da tela
+        console.log("Fluxo Direto conclu├¡do. Reiniciando...");
         setTimeout(() => {
           startScanner();
         }, 100);
       } else {
-        // No modo manual, volta para a home após confirmar
-        console.log("Fluxo Confirmar concluído. Navegando para a Home...");
+        // No modo manual, volta para a home ap├│s confirmar
+        console.log("Fluxo Confirmar conclu├¡do. Navegando para a Home...");
         setTimeout(() => {
           navigate('/');
         }, 500);
@@ -348,9 +371,9 @@ const QRScanner = () => {
   async function handleManualSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // Validação: precisa ter pelo menos motorista OU placa
+    // Valida├º├úo: precisa ter pelo menos motorista OU placa
     if (!manualId.trim() && !manualDriver.trim()) {
-      toast.error("Digite o nome do motorista OU a placa do ônibus.", { id: 'manual-look' });
+      toast.error("Digite o nome do motorista OU a placa do ├┤nibus.", { id: 'manual-look' });
       return;
     }
 
@@ -364,11 +387,11 @@ const QRScanner = () => {
       const searchId = manualId.trim().toUpperCase();
       const searchDriver = manualDriver.trim().toLowerCase();
 
-      // Normaliza strings para comparação (remove tudo que não for letra ou número)
+      // Normaliza strings para compara├º├úo (remove tudo que n├úo for letra ou n├║mero)
       const cleanString = (str: string) => str?.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || '';
       const cleanSearchId = cleanString(manualId);
 
-      // Lógica de busca offline ROBUSTA
+      // L├│gica de busca offline ROBUSTA
       if (manualId.trim() && manualDriver.trim()) {
         // Busca por AMBOS
         foundRegistration = registrationsList.find(r => {
@@ -383,13 +406,13 @@ const QRScanner = () => {
           const driverInDb = foundRegistration.drivers?.name?.toLowerCase().trim();
           if (driverInDb && !driverInDb.includes(searchDriver) && !searchDriver.includes(driverInDb)) {
             setIsDivergent(true);
-            toast.warning("Offline: Divergência de motorista detectada.", { id: 'manual-look' });
+            toast.warning("Offline: Diverg├¬ncia de motorista detectada.", { id: 'manual-look' });
           } else {
             toast.success("Offline: Registro encontrado no cache!", { id: 'manual-look' });
           }
         }
       } else if (manualId.trim()) {
-        // Busca só por PLACA (Flexível)
+        // Busca s├│ por PLACA (Flex├¡vel)
         foundRegistration = registrationsList.find(r => {
           const dbPlate = cleanString(r.buses?.plate);
           const dbBusNumber = cleanString(String(r.buses?.bus_number));
@@ -397,9 +420,9 @@ const QRScanner = () => {
           return dbPlate.includes(cleanSearchId) || dbBusNumber === cleanSearchId;
         });
 
-        if (foundRegistration) toast.success("Offline: Ônibus encontrado no cache!", { id: 'manual-look' });
+        if (foundRegistration) toast.success("Offline: ├önibus encontrado no cache!", { id: 'manual-look' });
       } else if (manualDriver.trim()) {
-        // Busca só por MOTORISTA
+        // Busca s├│ por MOTORISTA
         foundRegistration = registrationsList.find(r =>
           r.drivers?.name?.toLowerCase().includes(searchDriver)
         );
@@ -422,8 +445,8 @@ const QRScanner = () => {
         return;
       }
 
-      // Se não encontrou no cache, salva como desconhecido
-      toast.warning("Offline: Não encontrado no cache. Salvando manual.", { id: 'manual-look' });
+      // Se n├úo encontrou no cache, salva como desconhecido
+      toast.warning("Offline: N├úo encontrado no cache. Salvando manual.", { id: 'manual-look' });
 
       const qrData = {
         id: crypto.randomUUID(),
@@ -446,7 +469,7 @@ const QRScanner = () => {
     try {
       let registrationData = null;
 
-      // CENÁRIO 1: Busca por MOTORISTA (só nome digitado)
+      // CEN├üRIO 1: Busca por MOTORISTA (s├│ nome digitado)
       if (manualDriver.trim() && !manualId.trim()) {
         const { data, error } = await supabase
           .from('registrations')
@@ -459,39 +482,39 @@ const QRScanner = () => {
           .maybeSingle();
 
         if (error || !data) {
-          toast.error(`Motorista "${manualDriver}" não encontrado em nenhuma escala ativa.`, { id: 'manual-look' });
+          toast.error(`Motorista "${manualDriver}" n├úo encontrado em nenhuma escala ativa.`, { id: 'manual-look' });
           setIsSaving(false);
           return;
         }
 
         registrationData = data;
-        toast.success(`Ônibus encontrado para ${data.drivers?.name}!`, { id: 'manual-look' });
+        toast.success(`├önibus encontrado para ${data.drivers?.name}!`, { id: 'manual-look' });
       }
 
-      // CENÁRIO 2: Busca por PLACA (só placa digitada)
+      // CEN├üRIO 2: Busca por PLACA (s├│ placa digitada)
       else if (manualId.trim() && !manualDriver.trim()) {
         let searchTerm = manualId.trim().toUpperCase();
 
-        // Se for 3 letras e 4 números sem hífen, adiciona o hífen para buscar no banco
+        // Se for 3 letras e 4 n├║meros sem h├¡fen, adiciona o h├¡fen para buscar no banco
         // Ex: ABC1234 -> ABC-1234
         if (/^[A-Z]{3}\d{4}$/.test(searchTerm)) {
           searchTerm = searchTerm.replace(/^([A-Z]{3})(\d{4})$/, '$1-$2');
         }
 
-        // Busca o ônibus pela placa formatada ou número
+        // Busca o ├┤nibus pela placa formatada ou n├║mero
         const { data: busData, error: busError } = await supabase
           .from('buses')
           .select('id, plate, bus_number')
-          .or(`plate.ilike.%${searchTerm}%,bus_number.eq.${manualId},plate.ilike.%${manualId}%`) // Tenta c/ hífen, nº, ou original
+          .or(`plate.ilike.%${searchTerm}%,bus_number.eq.${manualId},plate.ilike.%${manualId}%`) // Tenta c/ h├¡fen, n┬║, ou original
           .maybeSingle();
 
         if (busError || !busData) {
-          toast.error(`Ônibus "${manualId}" não encontrado. Tente a placa completa (ex: ABC-1234) ou número.`, { id: 'manual-look' });
+          toast.error(`├önibus "${manualId}" n├úo encontrado. Tente a placa completa (ex: ABC-1234) ou n├║mero.`, { id: 'manual-look' });
           setIsSaving(false);
           return;
         }
 
-        // Busca a escala mais recente para esse ônibus
+        // Busca a escala mais recente para esse ├┤nibus
         const { data, error } = await supabase
           .from('registrations')
           .select('*, drivers(name), buses(bus_number, plate), routes(name)')
@@ -501,7 +524,7 @@ const QRScanner = () => {
           .maybeSingle();
 
         if (error || !data) {
-          toast.error("Nenhuma escala ativa encontrada para este ônibus.", { id: 'manual-look' });
+          toast.error("Nenhuma escala ativa encontrada para este ├┤nibus.", { id: 'manual-look' });
           setIsSaving(false);
           return;
         }
@@ -510,7 +533,7 @@ const QRScanner = () => {
         toast.success(`Motorista encontrado: ${data.drivers?.name}!`, { id: 'manual-look' });
       }
 
-      // CENÁRIO 3: Busca por AMBOS (placa + motorista)
+      // CEN├üRIO 3: Busca por AMBOS (placa + motorista)
       else if (manualId.trim() && manualDriver.trim()) {
         let searchTerm = manualId.trim().toUpperCase();
         if (/^[A-Z]{3}\d{4}$/.test(searchTerm)) {
@@ -524,7 +547,7 @@ const QRScanner = () => {
           .maybeSingle();
 
         if (busError || !busData) {
-          toast.error(`Ônibus "${manualId}" não encontrado.`, { id: 'manual-look' });
+          toast.error(`├önibus "${manualId}" n├úo encontrado.`, { id: 'manual-look' });
           setIsSaving(false);
           return;
         }
@@ -545,13 +568,13 @@ const QRScanner = () => {
 
         registrationData = data;
 
-        // Verifica se o motorista digitado é diferente do banco
+        // Verifica se o motorista digitado ├® diferente do banco
         const driverInDb = data.drivers?.name?.toLowerCase().trim();
         const driverTyped = manualDriver.toLowerCase().trim();
 
         if (driverInDb && !driverInDb.includes(driverTyped) && !driverTyped.includes(driverInDb)) {
           setIsDivergent(true);
-          toast.warning("Divergência detectada! O motorista digitado é diferente do banco.", { id: 'manual-look' });
+          toast.warning("Diverg├¬ncia detectada! O motorista digitado ├® diferente do banco.", { id: 'manual-look' });
         } else {
           toast.success("Registro encontrado!", { id: 'manual-look' });
         }
@@ -636,12 +659,12 @@ const QRScanner = () => {
                       <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4 border border-red-500/30">
                         <Icon name="block" size={32} className="text-red-500" />
                       </div>
-                      <p className="text-white font-medium mb-2">Acesso à câmera negado</p>
+                      <p className="text-white font-medium mb-2">Acesso ├á c├ómera negado</p>
                       <button
                         onClick={() => window.location.reload()}
                         className="w-full py-4 bg-white/10 text-white rounded-xl font-bold border border-white/20"
                       >
-                        Recarregar Página
+                        Recarregar P├ígina
                       </button>
                     </>
                   ) : (
@@ -701,7 +724,7 @@ const QRScanner = () => {
                     <button
                       onClick={async () => {
                         const loadingId = toast.loading("Baixando dados do servidor...");
-                        await syncCatalogs(); // Chama a função que agora está exposta
+                        await syncCatalogs(); // Chama a fun├º├úo que agora est├í exposta
                         toast.dismiss(loadingId);
                         toast.success("Dados atualizados!");
                       }}
@@ -728,7 +751,7 @@ const QRScanner = () => {
                 </div>
               </div>
 
-              {/* Status Offline e Atualização Manual */}
+              {/* Status Offline e Atualiza├º├úo Manual */}
               <div className="mb-6 flex flex-col items-center gap-2 w-full">
                 <div className="px-3 py-2 bg-white/5 rounded-lg border border-white/10 flex items-center gap-2 transition-all w-full justify-center">
                   <Icon name="database" size={12} className={registrationsList.length > 0 ? "text-green-400" : "text-gray-500"} />
@@ -756,7 +779,7 @@ const QRScanner = () => {
               <form onSubmit={handleManualSubmit} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2 text-left relative">
-                    <label className="text-[10px] text-gray-400 uppercase font-black ml-1 tracking-wider">Ônibus (Placa ou ID)</label>
+                    <label className="text-[10px] text-gray-400 uppercase font-black ml-1 tracking-wider">├önibus (Placa ou ID)</label>
                     <input
                       type="text"
                       value={manualId}
@@ -821,11 +844,11 @@ const QRScanner = () => {
                           <label className="text-[10px] text-amber-400 uppercase font-black ml-1 tracking-wider">Nome do Motorista Atual</label>
                           <input
                             type="text"
-                            placeholder="Quem está dirigindo agora?"
+                            placeholder="Quem est├í dirigindo agora?"
                             className="w-full bg-amber-500/5 border border-amber-500/20 rounded-2xl py-4 px-5 text-white font-bold text-center text-lg focus:border-amber-500/50 focus:bg-amber-500/10 focus:outline-none transition-all placeholder:text-gray-700"
                             required={isDivergent}
                             onChange={(e) => {
-                              // Adicionaremos um campo para o nome real se necessário no preview
+                              // Adicionaremos um campo para o nome real se necess├írio no preview
                               // Por enquanto usamos o previewData para isso
                             }}
                             id="manual-real-driver"
@@ -873,13 +896,13 @@ const QRScanner = () => {
                 </div>
                 <div>
                   <h3 className="text-white font-black text-xl leading-tight text-left">Conferir Dados</h3>
-                  <p className="text-gray-400 text-xs text-left">Confirme as informações</p>
+                  <p className="text-gray-400 text-xs text-left">Confirme as informa├º├Áes</p>
                 </div>
               </div>
 
               <div className="space-y-5 mb-10">
                 <div className="bg-white/5 rounded-[1.5rem] p-5 border border-white/5 shadow-inner">
-                  <p className="text-[10px] text-gray-500 uppercase font-black mb-1.5 tracking-widest">Veículo Identificado</p>
+                  <p className="text-[10px] text-gray-500 uppercase font-black mb-1.5 tracking-widest">Ve├¡culo Identificado</p>
                   <div className="flex items-baseline gap-2">
                     <p className="text-primary font-black text-2xl tracking-tighter">{previewData.plate || 'N/A'}</p>
                     <span className="text-gray-400 font-bold text-sm">#{previewData.bus || 'N/A'}</span>
@@ -908,7 +931,7 @@ const QRScanner = () => {
                   </div>
                 </div>
 
-                {/* Checkbox de Divergência */}
+                {/* Checkbox de Diverg├¬ncia */}
                 {previewData.driver && previewData.manualDriverName && previewData.driver !== previewData.manualDriverName && (
                   <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5 mb-6">
                     <div className="flex items-start gap-4">
@@ -921,10 +944,10 @@ const QRScanner = () => {
                       />
                       <label htmlFor="divergent-checkbox" className="flex-1 cursor-pointer">
                         <p className="text-amber-400 font-black text-sm uppercase tracking-wider mb-1">
-                          ⚠️ Motorista Diferente
+                          ÔÜá´©Å Motorista Diferente
                         </p>
                         <p className="text-gray-300 text-xs leading-relaxed">
-                          O motorista no banco é <span className="font-bold text-white">{previewData.driver}</span>, mas você digitou <span className="font-bold text-amber-400">{previewData.manualDriverName}</span>. Marque esta opção para registrar a divergência.
+                          O motorista no banco ├® <span className="font-bold text-white">{previewData.driver}</span>, mas voc├¬ digitou <span className="font-bold text-amber-400">{previewData.manualDriverName}</span>. Marque esta op├º├úo para registrar a diverg├¬ncia.
                         </p>
                       </label>
                     </div>
@@ -934,7 +957,7 @@ const QRScanner = () => {
 
               <div className="flex flex-col gap-3">
                 <button
-                  onClick={() => processAndSave(previewData)}
+                  onClick={() => initiatePassengerFlow(previewData, false)}
                   disabled={isSaving}
                   className="w-full py-5 bg-primary text-black rounded-2xl font-black text-lg shadow-[0_20px_40px_-10px_rgba(252,213,53,0.3)] flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
                 >
@@ -987,6 +1010,21 @@ const QRScanner = () => {
           </div>
         </div>
       </div>
+
+      <PassengerModal
+        isOpen={showPassengerModal}
+        onClose={() => {
+          setShowPassengerModal(false);
+          setPendingSaveCtx(null);
+          if (pendingSaveCtx?.isDirect) {
+            // Se cancelou no modo direto, volta pro scanner ou reinicia?
+            // Melhor reiniciar scanner
+            startScanner();
+          }
+        }}
+        onConfirm={handlePassengerConfirm}
+        busInfo={pendingSaveCtx ? `${pendingSaveCtx.data.plate || ''} (${pendingSaveCtx.data.bus || ''})` : ''}
+      />
 
       <style>{`
                 @keyframes scan-vertical {

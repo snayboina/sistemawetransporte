@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -14,6 +14,7 @@ interface PendingReading {
     read_at: string;
     has_divergence?: boolean;
     real_driver_name?: string | null;
+    passenger_count?: number;
 }
 
 const STORAGE_KEY = 'swiftride_pending_readings';
@@ -110,16 +111,16 @@ export const useOfflineSync = () => {
                 // but maybe overkill for every read. Keeping it simple.
             } catch (err: any) {
                 console.error('Error syncing reading:', err);
-                console.log('=== ERRO DE SINCRONIZAÇÃO ===');
+                console.log('=== ERRO DE SINCRONIZA├ç├âO ===');
                 console.log('Mensagem:', err?.message || 'Sem mensagem');
-                console.log('Código:', err?.code || 'Sem código');
+                console.log('C├│digo:', err?.code || 'Sem c├│digo');
                 console.log('Detalhes:', err?.details || 'Sem detalhes');
                 console.log('Hint:', err?.hint || 'Sem hint');
                 console.log('=============================');
 
                 const errorMsg = err?.message || err?.error_description || 'Erro desconhecido';
                 toast({
-                    title: 'Erro na sincronização',
+                    title: 'Erro na sincroniza├º├úo',
                     description: `Falha ao enviar: ${errorMsg}. Salvo localmente.`,
                     variant: 'destructive',
                     duration: 5000
@@ -140,7 +141,7 @@ export const useOfflineSync = () => {
         updatePendingCount();
         toast({
             title: 'Modo Offline',
-            description: 'Leitura salva localmente. Será sincronizada automaticamente.',
+            description: 'Leitura salva localmente. Ser├í sincronizada automaticamente.',
             variant: 'default'
         });
     };
@@ -160,11 +161,11 @@ export const useOfflineSync = () => {
 
             localStorage.removeItem(STORAGE_KEY);
             setPendingCount(0);
-            toast({ title: 'Sincronização concluída!', description: 'Todos os dados foram enviados.' });
+            toast({ title: 'Sincroniza├º├úo conclu├¡da!', description: 'Todos os dados foram enviados.' });
         } catch (err: any) {
             console.error('Sync failed:', err);
             toast({
-                title: 'Falha na sincronização',
+                title: 'Falha na sincroniza├º├úo',
                 description: err?.message || 'Erro desconhecido ao enviar dados.',
                 variant: 'destructive'
             });
@@ -193,7 +194,7 @@ export const useOfflineSync = () => {
         const stored = localStorage.getItem(STORAGE_KEY);
         const localReadings: PendingReading[] = stored ? JSON.parse(stored) : [];
 
-        // Filtrar apenas o que é de hoje (opcional, mas bom por segurança)
+        // Filtrar apenas o que ├® de hoje (opcional, mas bom por seguran├ºa)
         const todayStr = today.toISOString().split('T')[0];
         const pendingToday = localReadings.filter(r => r.read_at.startsWith(todayStr));
 
